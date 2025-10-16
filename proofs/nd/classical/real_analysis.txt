@@ -1,0 +1,133 @@
+
+(*/chapter Real analysis *)
+
+(*/section Archimedean property *)
+
+is_sup_unfold. ⊢ is_sup s A → upper_bound s A ∧
+  (∀b. b ∈ ℝ → upper_bound b A → s ≤ b), bij_eliml is_sup_equi.
+
+01. 1 ⊢ upper_bound b A, hypo.
+02. 2 ⊢ x ∈ A, hypo.
+03. 1 ⊢ ∀x. x ∈ A → x ≤ b, lsubj_elim upper_bound_equi 1.
+04. 1, 2 ⊢ x ≤ b, uq_bounded_elim 3 2.
+upper_bound_elim. ⊢ upper_bound b A → x ∈ A → x ≤ b,
+  subj_intro_ii 4.
+
+01. 1 ⊢ ∃b. b ∈ ℝ ∧ upper_bound b ℕ, hypo.
+02. ⊢ ℕ ⊆ ℝ, nat_incl_in_real.
+03. ⊢ 0 ∈ ℕ, zero_in_nat.
+04. ⊢ ¬ℕ = ∅, non_empty_from_witness 3.
+05. 1 ⊢ ∃s. s ∈ ℝ ∧ is_sup s ℕ, lub_property 2 4 1.
+06. 6 ⊢ s ∈ ℝ ∧ is_sup s ℕ, hypo.
+07. 6 ⊢ s ∈ ℝ, conj_eliml 6.
+08. 6 ⊢ is_sup s ℕ, conj_elimr 6.
+09. 6 ⊢ upper_bound s ℕ ∧
+  (∀b. b ∈ ℝ → upper_bound b ℕ → s ≤ b), is_sup_unfold 8.
+10. 6 ⊢ upper_bound s ℕ, conj_eliml 9.
+11. 6 ⊢ ∀b. b ∈ ℝ → upper_bound b ℕ → s ≤ b, conj_elimr 9.
+12. 6 ⊢ s - 1 < s, rlt_sub_one 7.
+13. 13 ⊢ upper_bound (s - 1) ℕ, hypo.
+14. ⊢ 1 ∈ ℝ, calc.
+15. 6 ⊢ s - 1 ∈ ℝ, rsub_closed 7 14.
+16. 6 ⊢ upper_bound (s - 1) ℕ → s ≤ s - 1,
+  uq_bounded_elim 11 15.
+17. 6, 13 ⊢ s ≤ s - 1, subj_elim 16 13.
+18. 6, 13 ⊢ s < s, rle_lt_trans 7 15 7 17 12.
+19. ⊢ ¬(s < s), lt_irrefl.
+20. 6, 13 ⊢ ⊥, neg_elim 19 18.
+21. 6 ⊢ ¬upper_bound (s - 1) ℕ, neg_intro 20.
+22. ⊢ upper_bound (s - 1) ℕ ↔ ∀x. x ∈ ℕ → x ≤ s - 1,
+  upper_bound_equi.
+23. ⊢ ¬upper_bound (s - 1) ℕ ↔ ¬∀x. x ∈ ℕ → x ≤ s - 1,
+  equi_cong_neg 22.
+24. 6 ⊢ ¬∀x. x ∈ ℕ → x ≤ s - 1, lsubj_elim 23 21.
+25. 6 ⊢ ∃x. x ∈ ℕ ∧ ¬(x ≤ s - 1), neg_uq_bounded 24.
+26. 26 ⊢ m ∈ ℕ ∧ ¬(m ≤ s - 1), hypo.
+27. 26 ⊢ m ∈ ℕ, conj_eliml 26.
+28. 26 ⊢ ¬(m ≤ s - 1), conj_elimr 26.
+29. 26 ⊢ m ∈ ℝ, incl_elim nat_incl_in_real 27.
+30. 6, 26 ⊢ s - 1 < m, rle_neg 29 15 28.
+31. ⊢ 1 ∈ ℝ, calc.
+32. 6, 26 ⊢ s - 1 + 1 < m + 1, rlt_compat_add 15 29 31 30.
+33. 6 ⊢ s - 1 + 1 = s, rsub_cancel 7 31.
+34. 6 ⊢ s = s - 1 + 1, eq_symm 33.
+35. 6, 26 ⊢ s < m + 1, eq_lt_trans 34 32.
+36. 26 ⊢ m + 1 ∈ ℕ, succ_in_nat 27.
+37. 26 ⊢ m + 1 ∈ ℝ, incl_elim nat_incl_in_real 36.
+38. 6, 26 ⊢ m + 1 ≤ s, upper_bound_elim 10 36.
+39. 6, 26 ⊢ s < s, rlt_le_trans 7 37 7 35 38.
+40. 6, 26 ⊢ ⊥, neg_elim 19 39.
+41. 6 ⊢ ⊥, ex_elim 25 40.
+42. 1 ⊢ ⊥, ex_elim 5 41.
+nat_unbounded. ⊢ ¬(∃b. b ∈ ℝ ∧ upper_bound b ℕ),
+  neg_intro 42.
+
+01. ⊢ ¬(∃x. x ∈ ℝ ∧ upper_bound x ℕ), nat_unbounded.
+02. ⊢ ∀x. x ∈ ℝ → ¬upper_bound x ℕ, neg_ex_bounded 1.
+03. 3 ⊢ x ∈ ℝ, hypo.
+04. 3 ⊢ ¬upper_bound x ℕ, uq_bounded_elim 2 3.
+05. ⊢ upper_bound x ℕ ↔ ∀n. n ∈ ℕ → n ≤ x, upper_bound_equi.
+06. ⊢ ¬upper_bound x ℕ ↔ ¬∀n. n ∈ ℕ → n ≤ x, equi_cong_neg 5.
+07. 3 ⊢ ¬∀n. n ∈ ℕ → n ≤ x, lsubj_elim 6 4.
+08. 3 ⊢ ∃n. n ∈ ℕ ∧ ¬(n ≤ x), neg_uq_bounded 7.
+09. 9 ⊢ n ∈ ℕ ∧ ¬(n ≤ x), hypo.
+10. 9 ⊢ n ∈ ℕ, conj_eliml 9.
+11. 9 ⊢ n ∈ ℝ, incl_elim nat_incl_in_real 10.
+12. 9 ⊢ ¬(n ≤ x), conj_elimr 9.
+13. 3, 9 ⊢ x < n, rle_neg 11 3 12.
+14. 3, 9 ⊢ n ∈ ℕ ∧ x < n, conj_intro 10 13.
+15. 3, 9 ⊢ ∃n. n ∈ ℕ ∧ x < n, ex_intro 14.
+16. 3 ⊢ ∃n. n ∈ ℕ ∧ x < n, ex_elim 8 15.
+archimedean_property. ⊢ x ∈ ℝ → ∃n. n ∈ ℕ ∧ x < n,
+  subj_intro 16.
+
+01. 1 ⊢ x ∈ ℝ, hypo.
+02. 2 ⊢ y ∈ ℝ, hypo.
+03. 3 ⊢ 0 < x, hypo.
+04. 3 ⊢ ¬(0 = x), neq_from_lt 3.
+05. 3 ⊢ ¬(x = 0), neq_symm 4.
+06. 1, 2, 3 ⊢ y/x ∈ ℝ, rdiv_closed 2 1 5.
+07. 1, 2, 3 ⊢ ∃n. n ∈ ℕ ∧ y/x < n,
+  archimedean_property 6.
+08. 8 ⊢ n ∈ ℕ ∧ y/x < n, hypo.
+09. 8 ⊢ n ∈ ℕ, conj_eliml 8.
+10. 8 ⊢ n ∈ ℝ, incl_elim nat_incl_in_real 9.
+11. 8 ⊢ y/x < n, conj_elimr 8.
+12. 1, 2, 3, 8 ⊢ (y/x)⋅x < n⋅x,
+  rlt_compat_mulr 6 10 1 11 3.
+13. 1, 2, 3 ⊢ (y/x)⋅x = y, rdiv_cancel 2 1 5.
+14. 1, 2, 3 ⊢ y = (y/x)⋅x, eq_symm 13.
+15. 1, 2, 3, 8 ⊢ y < n⋅x, eq_lt_trans 14 12.
+16. 1, 2, 3, 8 ⊢ n ∈ ℕ ∧ y < n⋅x, conj_intro 9 15.
+17. 1, 2, 3, 8 ⊢ ∃n. n ∈ ℕ ∧ y < n⋅x, ex_intro 16.
+18. 1, 2, 3 ⊢ ∃n. n ∈ ℕ ∧ y < n⋅x, ex_elim 7 17.
+archimedean_property_corollary. ⊢ x ∈ ℝ → y ∈ ℝ →
+  0 < x → ∃n. n ∈ ℕ ∧ y < n⋅x, subj_intro_iii 18.
+
+01. 1 ⊢ ε ∈ ℝ, hypo.
+02. 2 ⊢ 0 < ε, hypo.
+03. ⊢ 1 ∈ ℝ, calc.
+04. 1, 2 ⊢ ∃n. n ∈ ℕ ∧ 1 < n⋅ε,
+  archimedean_property_corollary 1 3 2.
+05. 5 ⊢ n ∈ ℕ ∧ 1 < n⋅ε, hypo.
+06. 5 ⊢ n ∈ ℕ, conj_eliml 5.
+07. 5 ⊢ 1 < n⋅ε, conj_elimr 5.
+08. 5 ⊢ n ∈ ℝ, incl_elim nat_incl_in_real 6.
+09. 1, 5 ⊢ n⋅ε = ε⋅n, rmul_comm 8 1.
+10. 1, 5 ⊢ 1 < ε⋅n, lt_eq_trans 7 9.
+11. 1, 5 ⊢ ε⋅n ∈ ℝ, rmul_closed 1 8.
+12. ⊢ 0 ∈ ℝ, calc.
+13. ⊢ 0 < 1, calc.
+14. 1, 5 ⊢ 0 < ε⋅n, rlt_trans 12 3 11 13 10.
+15. 1, 2, 5 ⊢ 0 < n, rmul_positive_lr 1 8 2 14.
+16. 1, 2, 5 ⊢ 1/n < ε⋅n/n, rlt_compat_div 3 11 8 10 15.
+17. 1, 2, 5 ⊢ ¬(0 = n), neq_from_lt 15.
+18. 1, 2, 5 ⊢ ¬(n = 0), neq_symm 17.
+19. 1, 2, 5 ⊢ ε⋅n/n = ε, rmul_cancel 1 8 18.
+20. 1, 2, 5 ⊢ 1/n < ε, lt_eq_trans 16 19.
+21. 1, 2, 5 ⊢ n ∈ ℕ ∧ 0 < n, conj_intro 6 15.
+22. 1, 2, 5 ⊢ n ∈ ℕ ∧ 0 < n ∧ 1/n < ε, conj_intro 21 20.
+23. 1, 2, 5 ⊢ ∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < ε, ex_intro 22.
+24. 1, 2 ⊢ ∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < ε, ex_elim 4 23.
+archimedean_property_corollary_ii. ⊢ ε ∈ ℝ → 0 < ε →
+  ∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < ε, subj_intro_ii 24.

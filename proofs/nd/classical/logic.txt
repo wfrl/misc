@@ -1,0 +1,1007 @@
+
+(*/chapter Classical logic *)
+
+(*/section Inference rules *)
+
+(*/rules hypo conj_intro conj_eliml conj_elimr disj_introl disj_intror
+disj_elim subj_intro subj_elim neg_intro neg_elim bij_intro bij_eliml
+bij_elimr wk exch uq_intro uq_elim ex_intro ex_elim subj_intro_ii
+subj_intro_iii subj_intro_iv *)
+
+hypo. (⊤ ∧ A ⊢ A), axiom.
+conj_intro. (H1 ⊢ A) → (H2 ⊢ B) → (H1 ∧ H2 ⊢ A ∧ B), axiom.
+conj_eliml. (H ⊢ A ∧ B) → (H ⊢ A), axiom.
+conj_elimr. (H ⊢ A ∧ B) → (H ⊢ B), axiom.
+disj_introl. (H ⊢ A) → (H ⊢ A ∨ B), axiom.
+disj_intror. (H ⊢ B) → (H ⊢ A ∨ B), axiom.
+disj_elim. (H1 ⊢ A ∨ B) → (H2 ∧ A ⊢ C) → (H3 ∧ B ⊢ C) →
+  (H1 ∧ H2 ∧ H3 ⊢ C), axiom.
+subj_intro. (H ∧ A ⊢ B) → (H ⊢ A → B), axiom.
+subj_elim. (H1 ⊢ A → B) → (H2 ⊢ A) → (H1 ∧ H2 ⊢ B), axiom.
+neg_intro. (H ∧ A ⊢ ⊥) → (H ⊢ ¬A), axiom.
+neg_elim. (H1 ⊢ ¬A) → (H2 ⊢ A) → (H1 ∧ H2 ⊢ ⊥), axiom.
+bij_intro. (H1 ⊢ A → B) → (H2 ⊢ B → A) → (H1 ∧ H2 ⊢ A ↔ B), axiom.
+bij_eliml. (H ⊢ A ↔ B) → (H ⊢ A → B), axiom.
+bij_elimr. (H ⊢ A ↔ B) → (H ⊢ B → A), axiom.
+wk. (H ⊢ B) → (H ∧ A ⊢ B), axiom.
+exch. (H ⊢ A) → (H ⊢ A), axiom.
+uq_intro. (nf u (H ∧ ∀x. P x)) → (H ⊢ P u) → (H ⊢ ∀x. P x), axiom.
+uq_elim. (H ⊢ ∀x. P x) → (H ⊢ P t), axiom.
+ex_intro. (H ⊢ P t) → (H ⊢ ∃x. P x), axiom.
+ex_elim. (nf u (H1 ∧ H2 ∧ B ∧ ∃x. P x)) →
+  (H1 ⊢ ∃x. P x) → (H2 ∧ P u ⊢ B) → (H1 ∧ H2 ⊢ B), axiom.
+subj_intro_ii. (H ∧ A ∧ B ⊢ C) → (H ⊢ A → B → C), axiom.
+subj_intro_iii. (H ∧ A ∧ B ∧ C ⊢ D) → (H ⊢ A → B → C → D), axiom.
+subj_intro_iv. (H ∧ A ∧ B ∧ C ∧ D ⊢ E) → (H ⊢ A → B → C → D → E), axiom.
+
+(*/section Propositional logic *)
+
+(*/subsection The relationship of EFQ, LEM, DNE *)
+
+01. 1 ⊢ ¬¬A, hypo.
+02. ⊢ A ∨ ¬A, lem.
+03. 3 ⊢ A, hypo.
+04. 4 ⊢ ¬A, hypo.
+05. 1, 4 ⊢ ⊥, neg_elim 1 4.
+06. 1, 4 ⊢ A, efq 5.
+07. 1 ⊢ A, disj_elim 2 3 6.
+dne. ⊢ ¬¬A → A, subj_intro 7.
+
+01. 1 ⊢ ¬¬A → A, hypo.
+02. 2 ⊢ ⊥, hypo.
+03. 3 ⊢ ¬A, hypo.
+04. 2, 3 ⊢ ⊥, wk 2.
+05. 2 ⊢ ¬¬A, neg_intro 4.
+06. 1, 2 ⊢ A, subj_elim 1 5.
+efq_from_dne. ⊢ (¬¬A → A) → (⊥ → A), subj_intro_ii 6.
+
+01. 1 ⊢ ¬(A ∨ ¬A), hypo.
+02. 2 ⊢ A, hypo.
+03. 2 ⊢ A ∨ ¬A, disj_introl 2.
+04. 1, 2 ⊢ ⊥, neg_elim 1 3.
+05. 1 ⊢ ¬A, neg_intro 4.
+06. 1 ⊢ A ∨ ¬A, disj_intror 5.
+07. 1 ⊢ ⊥, neg_elim 1 6.
+08. ⊢ ¬¬(A ∨ ¬A), neg_intro 7.
+lem_from_dne. ⊢ A ∨ ¬A, dne 8.
+
+(*/subsection Projection lemmata *)
+
+01. 1 ⊢ A ∧ B ∧ C, hypo.
+02. 1 ⊢ A ∧ B, conj_eliml 1.
+03. 1 ⊢ A, conj_eliml 2.
+conj_elimll. ⊢ A ∧ B ∧ C → A, subj_intro 3.
+
+01. 1 ⊢ A ∧ B ∧ C, hypo.
+02. 1 ⊢ A ∧ B, conj_eliml 1.
+03. 1 ⊢ B, conj_elimr 2.
+conj_elimlr. ⊢ A ∧ B ∧ C → B, subj_intro 3.
+
+01. 1 ⊢ A ∧ (B ∧ C), hypo.
+02. 1 ⊢ B ∧ C, conj_elimr 1.
+03. 1 ⊢ B, conj_eliml 2.
+conj_elimrl. ⊢ A ∧ (B ∧ C) → B, subj_intro 3.
+
+01. 1 ⊢ A ∧ (B ∧ C), hypo.
+02. 1 ⊢ B ∧ C, conj_elimr 1.
+03. 1 ⊢ C, conj_elimr 2.
+conj_elimrr. ⊢ A ∧ (B ∧ C) → C, subj_intro 3.
+
+01. 1 ⊢ A ∧ B ∧ C ∧ D, hypo.
+02. 1 ⊢ A ∧ B ∧ C, conj_eliml 1.
+03. 1 ⊢ A ∧ B, conj_eliml 2.
+04. 1 ⊢ A, conj_eliml 3.
+conj_elimlll. ⊢ A ∧ B ∧ C ∧ D → A, subj_intro 4.
+
+01. 1 ⊢ A ∧ B ∧ C ∧ D, hypo.
+02. 1 ⊢ A ∧ B ∧ C, conj_eliml 1.
+03. 1 ⊢ A ∧ B, conj_eliml 2.
+04. 1 ⊢ B, conj_elimr 3.
+conj_elimllr. ⊢ A ∧ B ∧ C ∧ D → B, subj_intro 4.
+
+01. 1 ⊢ A ↔ B, hypo.
+02. 1 ⊢ A → B, bij_eliml 1.
+lsubj_elim. ⊢ (A ↔ B) → A → B, subj_intro 2.
+
+01. 1 ⊢ A ↔ B, hypo.
+02. 1 ⊢ B → A, bij_elimr 1.
+rsubj_elim. ⊢ (A ↔ B) → B → A, subj_intro 2.
+
+01. 1 ⊢ E ↔ A ∧ B, hypo.
+02. 2 ⊢ E, hypo.
+03. 1, 2 ⊢ A ∧ B, lsubj_elim 1 2.
+04. 1, 2 ⊢ A, conj_eliml 3.
+lsubj_conj_eliml. ⊢ (E ↔ A ∧ B) → E → A, subj_intro_ii 4.
+
+01. 1 ⊢ E ↔ A ∧ B, hypo.
+02. 2 ⊢ E, hypo.
+03. 1, 2 ⊢ A ∧ B, lsubj_elim 1 2.
+04. 1, 2 ⊢ B, conj_elimr 3.
+lsubj_conj_elimr. ⊢ (E ↔ A ∧ B) → E → B, subj_intro_ii 4.
+
+01. 1 ⊢ E ↔ A ∧ B ∧ C, hypo.
+02. 2 ⊢ E, hypo.
+03. 1, 2 ⊢ A ∧ B ∧ C, lsubj_elim 1 2.
+04. 1, 2 ⊢ A, conj_elimll 3.
+lsubj_conj_elimll. ⊢ (E ↔ A ∧ B ∧ C) → E → A, subj_intro_ii 4.
+
+01. 1 ⊢ E ↔ A ∧ B ∧ C, hypo.
+02. 2 ⊢ E, hypo.
+03. 1, 2 ⊢ A ∧ B ∧ C, lsubj_elim 1 2.
+04. 1, 2 ⊢ B, conj_elimlr 3.
+lsubj_conj_elimlr. ⊢ (E ↔ A ∧ B ∧ C) → E → B, subj_intro_ii 4.
+
+01. 1 ⊢ E ↔ A ∧ B ∧ C ∧ D, hypo.
+02. 2 ⊢ E, hypo.
+03. 1, 2 ⊢ A ∧ B ∧ C ∧ D, lsubj_elim 1 2.
+04. 1, 2 ⊢ A, conj_elimlll 3.
+lsubj_conj_elimlll. ⊢ (E ↔ A ∧ B ∧ C ∧ D) → E → A, subj_intro_ii 4.
+
+01. 1 ⊢ E ↔ A ∧ B ∧ C ∧ D, hypo.
+02. 2 ⊢ E, hypo.
+03. 1, 2 ⊢ A ∧ B ∧ C ∧ D, lsubj_elim 1 2.
+04. 1, 2 ⊢ B, conj_elimllr 3.
+lsubj_conj_elimllr. ⊢ (E ↔ A ∧ B ∧ C ∧ D) → E → B, subj_intro_ii 4.
+
+01. 1 ⊢ A ↔ B, hypo.
+02. 2 ⊢ ¬A, hypo.
+03. 3 ⊢ B, hypo.
+04. 1, 3 ⊢ A, rsubj_elim 1 3.
+05. 1, 2, 3 ⊢ ⊥, neg_elim 2 4.
+06. 1, 2 ⊢ ¬B, neg_intro 5.
+rsubj_tollens. ⊢ (A ↔ B) → ¬A → ¬B, subj_intro_ii 6.
+
+(*/subsection Useful theorems *)
+
+01. 1 ⊢ A ↔ ¬A, hypo.
+02. 2 ⊢ A, hypo.
+03. 1, 2 ⊢ ¬A, lsubj_elim 1 2.
+04. 1, 2 ⊢ ⊥, neg_elim 3 2.
+05. 1 ⊢ ¬A, neg_intro 4.
+06. 1 ⊢ A, rsubj_elim 1 5.
+07. 1 ⊢ ⊥, neg_elim 5 6.
+diag_contra. ⊢ (A ↔ ¬A) → ⊥, subj_intro 7.
+
+01. 1 ⊢ A, hypo.
+02. 2 ⊢ ¬A, hypo.
+03. 1, 2 ⊢ ⊥, neg_elim 2 1.
+04. 1 ⊢ ¬¬A, neg_intro 3.
+dn_intro. ⊢ A → ¬¬A, subj_intro 4.
+
+01. 1 ⊢ ¬B, hypo.
+02. 2 ⊢ A → B, hypo.
+03. 3 ⊢ A, hypo.
+04. 2, 3 ⊢ B, subj_elim 2 3.
+05. 1, 2, 3 ⊢ ⊥, neg_elim 1 4.
+06. 2, 1 ⊢ ¬A, neg_intro 5.
+07. 2 ⊢ ¬B → ¬A, subj_intro 6.
+contraposition. ⊢ (A → B) → ¬B → ¬A, subj_intro 7.
+
+01. 1 ⊢ ¬A → ¬B, hypo.
+02. 1 ⊢ ¬¬B → ¬¬A, contraposition 1.
+03. 3 ⊢ B, hypo.
+04. 3 ⊢ ¬¬B, dn_intro 3.
+05. 1, 3 ⊢ ¬¬A, subj_elim 2 4.
+06. 1, 3 ⊢ A, dne 5.
+07. 1 ⊢ B → A, subj_intro 6.
+contraposition_rev. ⊢ (¬A → ¬B) → (B → A), subj_intro 7.
+
+01. 1 ⊢ ¬A ∨ B, hypo.
+02. 2 ⊢ A, hypo.
+03. 3 ⊢ ¬A, hypo.
+04. 2, 3 ⊢ ⊥, neg_elim 3 2.
+05. 2, 3 ⊢ B, efq 4.
+06. 6 ⊢ B, hypo.
+07. 1, 2 ⊢ B, disj_elim 1 5 6.
+08. 1 ⊢ A → B, subj_intro 7.
+subj_from_disj. ⊢ (¬A ∨ B) → (A → B),
+  subj_intro 8.
+
+01. 1 ⊢ A → B, hypo.
+02. ⊢ A ∨ ¬A, lem.
+03. 3 ⊢ A, hypo.
+04. 1, 3 ⊢ B, subj_elim 1 3.
+05. 1, 3 ⊢ ¬A ∨ B, disj_intror 4.
+06. 6 ⊢ ¬A, hypo.
+07. 6 ⊢ ¬A ∨ B, disj_introl 6.
+08. 1 ⊢ ¬A ∨ B, disj_elim 2 5 7.
+disj_from_subj. ⊢ (A → B) → ¬A ∨ B,
+  subj_intro 8.
+
+01. 1 ⊢ A ∨ B, hypo.
+02. 2 ⊢ ¬B, hypo.
+03. 3 ⊢ A, hypo.
+04. 4 ⊢ B, hypo.
+05. 2, 4 ⊢ ⊥, neg_elim 2 4.
+06. 2, 4 ⊢ A, efq 5.
+07. 1, 2 ⊢ A, disj_elim 1 3 6.
+tollendo_ponens_left. ⊢ A ∨ B → ¬B → A, subj_intro_ii 7.
+
+01. 1 ⊢ A ∨ B, hypo.
+02. 2 ⊢ ¬A, hypo.
+03. 3 ⊢ A, hypo.
+04. 2, 3 ⊢ ⊥, neg_elim 2 3.
+05. 2, 3 ⊢ B, efq 4.
+06. 6 ⊢ B, hypo.
+07. 1, 2 ⊢ B, disj_elim 1 5 6.
+tollendo_ponens_right. ⊢ A ∨ B → ¬A → B, subj_intro_ii 7.
+
+01. 1 ⊢ A → B, hypo.
+02. 2 ⊢ B → C, hypo.
+03. 3 ⊢ A, hypo.
+04. 1, 3 ⊢ B, subj_elim 1 3.
+05. 1, 2, 3 ⊢ C, subj_elim 2 4.
+hypothetical_syllogism. ⊢ (A → B) → (B → C) → (A → C),
+  subj_intro_iii 5.
+
+01. 1 ⊢ A, hypo.
+02. ⊢ A → A, subj_intro 1.
+equi_refl. ⊢ A ↔ A, bij_intro 2 2.
+
+01. 1 ⊢ A ↔ B, hypo.
+02. 1 ⊢ A → B, bij_eliml 1.
+03. 1 ⊢ B → A, bij_elimr 1.
+04. 1 ⊢ B ↔ A, bij_intro 3 2.
+equi_symm. ⊢ (A ↔ B) → (B ↔ A), subj_intro 4.
+
+01. 1 ⊢ A ↔ B, hypo.
+02. 2 ⊢ B ↔ C, hypo.
+03. 1 ⊢ A → B, bij_eliml 1.
+04. 2 ⊢ B → C, bij_eliml 2.
+05. 1 ⊢ B → A, bij_elimr 1.
+06. 2 ⊢ C → B, bij_elimr 2.
+07. 1, 2 ⊢ A → C, hypothetical_syllogism 3 4.
+08. 1, 2 ⊢ C → A, hypothetical_syllogism 6 5.
+09. 1, 2 ⊢ A ↔ C, bij_intro 7 8.
+equi_trans. ⊢ (A ↔ B) → (B ↔ C) → (A ↔ C), subj_intro_ii 9.
+
+01. 1 ⊢ C ↔ A, hypo.
+02. 2 ⊢ C ↔ B, hypo.
+03. 1 ⊢ A ↔ C, equi_symm 1.
+04. 1, 2 ⊢ A ↔ B, equi_trans 3 2.
+equi_trans_ll. ⊢ (C ↔ A) → (C ↔ B) → (A ↔ B),
+  subj_intro_ii 4.
+
+01. 1 ⊢ A ↔ C, hypo.
+02. 2 ⊢ B ↔ C, hypo.
+03. 2 ⊢ C ↔ B, equi_symm 2.
+04. 1, 2 ⊢ A ↔ B, equi_trans 1 3.
+equi_trans_rr. ⊢ (A ↔ C) → (B ↔ C) → (A ↔ B),
+  subj_intro_ii 4.
+
+01. 1 ⊢ A → B, hypo.
+02. 2 ⊢ B → C, hypo.
+03. 3 ⊢ C → A, hypo.
+04. 1, 2 ⊢ A → C, hypothetical_syllogism 1 2.
+05. 2, 3 ⊢ B → A, hypothetical_syllogism 2 3.
+06. 1, 3 ⊢ C → B, hypothetical_syllogism 3 1.
+07. 1, 2, 3 ⊢ A ↔ B, bij_intro 1 5.
+08. 1, 2, 3 ⊢ A ↔ C, bij_intro 4 3.
+09. 1, 2, 3 ⊢ B ↔ C, bij_intro 2 6.
+10. 1, 2, 3 ⊢ (A ↔ B) ∧ (A ↔ C), conj_intro 7 8.
+11. 1, 2, 3 ⊢ (A ↔ B) ∧ (A ↔ C) ∧ (B ↔ C), conj_intro 10 9.
+closed_chain_iii. ⊢ (A → B) → (B → C) → (C → A) →
+  (A ↔ B) ∧ (A ↔ C) ∧ (B ↔ C), subj_intro_iii 11.
+
+(*/subsection De Morgan's laws *)
+
+01. 1 ⊢ ¬(A ∧ B), hypo.
+02. ⊢ A ∨ ¬A, lem.
+03. 3 ⊢ A, hypo.
+04. 4 ⊢ B, hypo.
+05. 3, 4 ⊢ A ∧ B, conj_intro 3 4.
+06. 1, 3, 4 ⊢ ⊥, neg_elim 1 5.
+07. 1, 3 ⊢ ¬B, neg_intro 6.
+08. 1, 3 ⊢ ¬A ∨ ¬B, disj_intror 7.
+09. 9 ⊢ ¬A, hypo.
+10. 9 ⊢ ¬A ∨ ¬B, disj_introl 9.
+11. 1 ⊢ ¬A ∨ ¬B, disj_elim 2 8 10.
+neg_conj. ⊢ ¬(A ∧ B) → ¬A ∨ ¬B, subj_intro 11.
+
+01. 1 ⊢ ¬A ∨ ¬B, hypo.
+02. 2 ⊢ A ∧ B, hypo.
+03. 3 ⊢ ¬A, hypo.
+04. 2 ⊢ A, conj_eliml 2.
+05. 2, 3 ⊢ ⊥, neg_elim 3 4.
+06. 6 ⊢ ¬B, hypo.
+07. 2 ⊢ B, conj_elimr 2.
+08. 2, 6 ⊢ ⊥, neg_elim 6 7.
+09. 1, 2 ⊢ ⊥, disj_elim 1 5 8.
+10. 1 ⊢ ¬(A ∧ B), neg_intro 9.
+neg_conj_rev. ⊢ ¬A ∨ ¬B → ¬(A ∧ B),
+  subj_intro 10.
+
+neg_conj_equi. ⊢ ¬(A ∧ B) ↔ ¬A ∨ ¬B,
+  bij_intro neg_conj neg_conj_rev.
+
+01. 1 ⊢ ¬(A ∨ B), hypo.
+02. 2 ⊢ A, hypo.
+03. 2 ⊢ A ∨ B, disj_introl 2.
+04. 1, 2 ⊢ ⊥, neg_elim 1 3.
+05. 1 ⊢ ¬A, neg_intro 4.
+06. 6 ⊢ B, hypo.
+07. 6 ⊢ A ∨ B, disj_intror 6.
+08. 1, 6 ⊢ ⊥, neg_elim 1 7.
+09. 1 ⊢ ¬B, neg_intro 8.
+10. 1 ⊢ ¬A ∧ ¬B, conj_intro 5 9.
+neg_disj. ⊢ ¬(A ∨ B) → ¬A ∧ ¬B,
+  subj_intro 10.
+
+01. 1 ⊢ ¬A ∧ ¬B, hypo.
+02. 2 ⊢ A ∨ B, hypo.
+03. 3 ⊢ A, hypo.
+04. 1 ⊢ ¬A, conj_eliml 1.
+05. 1, 3 ⊢ ⊥, neg_elim 4 3.
+06. 6 ⊢ B, hypo.
+07. 1 ⊢ ¬B, conj_elimr 1.
+08. 1, 6 ⊢ ⊥, neg_elim 7 6.
+09. 1, 2 ⊢ ⊥, disj_elim 2 5 8.
+10. 1 ⊢ ¬(A ∨ B), neg_intro 9.
+neg_disj_rev. ⊢ ¬A ∧ ¬B → ¬(A ∨ B),
+  subj_intro 10.
+
+neg_disj_equi. ⊢ ¬(A ∨ B) ↔ ¬A ∧ ¬B,
+  bij_intro neg_disj neg_disj_rev.
+
+01. 1 ⊢ B, hypo.
+02. 2 ⊢ A, hypo.
+03. 1, 2 ⊢ B, wk 1.
+04. 1 ⊢ A → B, subj_intro 3.
+05. 5 ⊢ ¬(A → B), hypo.
+06. 5, 1 ⊢ ⊥, neg_elim 5 4.
+07. 5 ⊢ ¬B, neg_intro 6.
+
+08. 8 ⊢ ¬A, hypo.
+09. 9 ⊢ A, hypo.
+10. 8, 9 ⊢ ⊥, neg_elim 8 9.
+11. 8, 9 ⊢ B, efq 10.
+12. 8 ⊢ A → B, subj_intro 11.
+13. 5, 8 ⊢ ⊥, neg_elim 5 12.
+14. 5 ⊢ ¬¬A, neg_intro 13.
+15. 5 ⊢ A, dne 14.
+
+16. 5 ⊢ A ∧ ¬B, conj_intro 15 7.
+neg_subj. ⊢ ¬(A → B) → A ∧ ¬B, subj_intro 16.
+
+01. 1 ⊢ A ∧ ¬B, hypo.
+02. 2 ⊢ A → B, hypo.
+03. 1 ⊢ A, conj_eliml 1.
+04. 1, 2 ⊢ B, subj_elim 2 3.
+05. 1 ⊢ ¬B, conj_elimr 1.
+06. 1, 2 ⊢ ⊥, neg_elim 5 4.
+07. 1 ⊢ ¬(A → B), neg_intro 6.
+neg_subj_rev. ⊢ A ∧ ¬B → ¬(A → B),
+  subj_intro 7.
+
+neg_subj_equi. ⊢ ¬(A → B) ↔ A ∧ ¬B,
+  bij_intro neg_subj neg_subj_rev.
+
+01. 1 ⊢ ¬A → ¬B → ¬C, hypo.
+02. 2 ⊢ ¬A ∧ ¬B, hypo.
+03. 2 ⊢ ¬A, conj_eliml 2.
+04. 2 ⊢ ¬B, conj_elimr 2.
+05. 1, 2 ⊢ ¬B → ¬C, subj_elim 1 3.
+06. 1, 2 ⊢ ¬C, subj_elim 5 4.
+07. 7 ⊢ C, hypo.
+08. 1, 7, 2 ⊢ ⊥, neg_elim 6 7.
+09. 1, 7 ⊢ ¬(¬A ∧ ¬B), neg_intro 8.
+10. 1, 7 ⊢ ¬¬A ∨ ¬¬B, neg_conj 9.
+11. 11 ⊢ ¬¬A, hypo.
+12. 11 ⊢ A, dne 11.
+13. 11 ⊢ A ∨ B, disj_introl 12.
+14. 14 ⊢ ¬¬B, hypo.
+15. 14 ⊢ B, dne 14.
+16. 14 ⊢ A ∨ B, disj_intror 15.
+17. 1, 7 ⊢ A ∨ B, disj_elim 10 13 16.
+contraposition_rev_ii. ⊢ (¬A → ¬B → ¬C) → C → A ∨ B,
+  subj_intro_ii 17.
+
+
+(*/subsection Congruence laws of equivalence *)
+
+01. 1 ⊢ A ↔ A', hypo.
+02. 2 ⊢ ¬A, hypo.
+03. 3 ⊢ A', hypo.
+04. 1, 3 ⊢ A, rsubj_elim 1 3.
+05. 1, 2, 3 ⊢ ⊥, neg_elim 2 4.
+06. 1, 2 ⊢ ¬A', neg_intro 5.
+07. 1 ⊢ ¬A → ¬A', subj_intro 6.
+08. 8 ⊢ ¬A', hypo.
+09. 9 ⊢ A, hypo.
+10. 1, 9 ⊢ A', lsubj_elim 1 9.
+11. 1, 8, 9 ⊢ ⊥, neg_elim 8 10.
+12. 1, 8 ⊢ ¬A, neg_intro 11.
+13. 1 ⊢ ¬A' → ¬A, subj_intro 12.
+14. 1 ⊢ ¬A ↔ ¬A', bij_intro 7 13.
+equi_cong_neg. ⊢ (A ↔ A') → (¬A ↔ ¬A'),
+  subj_intro 14.
+
+01. 1 ⊢ A ↔ A', hypo.
+02. 2 ⊢ B ↔ B', hypo.
+03. 3 ⊢ A ∧ B, hypo.
+04. 3 ⊢ A, conj_eliml 3.
+05. 3 ⊢ B, conj_elimr 3.
+06. 1, 3 ⊢ A', lsubj_elim 1 4.
+07. 2, 3 ⊢ B', lsubj_elim 2 5.
+08. 1, 2, 3 ⊢ A' ∧ B', conj_intro 6 7.
+09. 1, 2 ⊢ A ∧ B → A' ∧ B', subj_intro 8.
+10. 10 ⊢ A' ∧ B', hypo.
+11. 10 ⊢ A', conj_eliml 10.
+12. 10 ⊢ B', conj_elimr 10.
+13. 1, 10 ⊢ A, rsubj_elim 1 11.
+14. 2, 10 ⊢ B, rsubj_elim 2 12.
+15. 1, 2, 10 ⊢ A ∧ B, conj_intro 13 14.
+16. 1, 2 ⊢ A' ∧ B' → A ∧ B, subj_intro 15.
+17. 1, 2 ⊢ A ∧ B ↔ A' ∧ B', bij_intro 9 16.
+equi_cong_conj. ⊢ (A ↔ A') → (B ↔ B') →
+  (A ∧ B ↔ A' ∧ B'), subj_intro_ii 17.
+
+01. 1 ⊢ A ↔ A', hypo.
+02. 2 ⊢ B ↔ B', hypo.
+03. 3 ⊢ A ∨ B, hypo.
+04. 4 ⊢ A, hypo.
+05. 1, 4 ⊢ A', lsubj_elim 1 4.
+06. 1, 4 ⊢ A' ∨ B', disj_introl 5.
+07. 7 ⊢ B, hypo.
+08. 2, 7 ⊢ B', lsubj_elim 2 7.
+09. 2, 7 ⊢ A' ∨ B', disj_intror 8.
+10. 1, 2, 3 ⊢ A' ∨ B', disj_elim 3 6 9.
+11. 1, 2 ⊢ A ∨ B → A' ∨ B', subj_intro 10.
+12. 12 ⊢ A' ∨ B', hypo.
+13. 13 ⊢ A', hypo.
+14. 1, 13 ⊢ A, rsubj_elim 1 13.
+15. 1, 13 ⊢ A ∨ B, disj_introl 14.
+16. 16 ⊢ B', hypo.
+17. 2, 16 ⊢ B, rsubj_elim 2 16.
+18. 2, 16 ⊢ A ∨ B, disj_intror 17.
+19. 1, 2, 12 ⊢ A ∨ B, disj_elim 12 15 18.
+20. 1, 2 ⊢ A' ∨ B' → A ∨ B, subj_intro 19.
+21. 1, 2 ⊢ A ∨ B ↔ A' ∨ B', bij_intro 11 20.
+equi_cong_disj. ⊢ (A ↔ A') → (B ↔ B') →
+  (A ∨ B ↔ A' ∨ B'), subj_intro_ii 21.
+
+01. 1 ⊢ A ↔ A', hypo.
+02. 2 ⊢ B ↔ B', hypo.
+03. 3 ⊢ A → B, hypo.
+04. 4 ⊢ A', hypo.
+05. 1, 4 ⊢ A, rsubj_elim 1 4.
+06. 1, 3, 4 ⊢ B, subj_elim 3 5.
+07. 1, 2, 3, 4 ⊢ B', lsubj_elim 2 6.
+08. 1, 2 ⊢ (A → B) → (A' → B'), subj_intro_ii 7.
+09. 9 ⊢ A' → B', hypo.
+10. 10 ⊢ A, hypo.
+11. 1, 10 ⊢ A', lsubj_elim 1 10.
+12. 1, 9, 10 ⊢ B', subj_elim 9 11.
+13. 1, 2, 9, 10 ⊢ B, rsubj_elim 2 12.
+14. 1, 2 ⊢ (A' → B') → (A → B), subj_intro_ii 13.
+15. 1, 2 ⊢ (A → B) ↔ (A' → B'), bij_intro 8 14.
+equi_cong_subj. ⊢ (A ↔ A') → (B ↔ B') →
+  ((A → B) ↔ (A' → B')), subj_intro_ii 15.
+
+01. 1 ⊢ A ↔ A', hypo.
+02. 2 ⊢ B ↔ B', hypo.
+03. 3 ⊢ A ↔ B, hypo.
+04. 1, 3 ⊢ A' ↔ B, equi_trans_ll 1 3.
+05. 1, 2, 3 ⊢ A' ↔ B', equi_trans 4 2.
+06. 1, 2 ⊢ (A ↔ B) → (A' ↔ B'), subj_intro 5.
+07. 7 ⊢ A' ↔ B', hypo.
+08. 1, 7 ⊢ A ↔ B', equi_trans 1 7.
+09. 1, 2, 7 ⊢ A ↔ B, equi_trans_rr 8 2.
+10. 1, 2 ⊢ (A' ↔ B') → (A ↔ B), subj_intro 9.
+11. 1, 2 ⊢ (A ↔ B) ↔ (A' ↔ B'), bij_intro 6 10.
+equi_cong_bij. ⊢ (A ↔ A') → (B ↔ B') →
+  ((A ↔ B) ↔ (A' ↔ B')), subj_intro_ii 11.
+
+
+(*/section First order logic *)
+
+(*/subsection Bounded quantification *)
+
+01. 1 ⊢ ∀x. E x → P x, hypo.
+02. 2 ⊢ E u, hypo.
+03. 1 ⊢ E u → P u, uq_elim 1.
+04. 1, 2 ⊢ P u, subj_elim 3 2.
+uq_bounded_elim. ⊢ (∀x. E x → P x) → E u → P u, subj_intro_ii 4.
+
+(*/subsection De Morgan's laws *)
+
+01. 1 ⊢ ¬∃x. P x, hypo.
+02. 2 ⊢ P x, hypo.
+03. 2 ⊢ ∃x. P x, ex_intro 2.
+04. 1, 2 ⊢ ⊥, neg_elim 1 3.
+05. 1 ⊢ ¬P x, neg_intro 4.
+06. 1 ⊢ ∀x. ¬P x, uq_intro 5.
+neg_ex. ⊢ (¬∃x. P x) → (∀x. ¬P x), subj_intro 6.
+
+01. 1 ⊢ ∃x. P x, hypo.
+02. 2 ⊢ ∀x. ¬P x, hypo.
+03. 3 ⊢ P u, hypo.
+04. 2 ⊢ ¬P u, uq_elim 2.
+05. 2, 3 ⊢ ⊥, neg_elim 4 3.
+06. 2, 1 ⊢ ⊥, ex_elim 1 5.
+07. 2 ⊢ ¬∃x. P x, neg_intro 6.
+neg_ex_rev. ⊢ (∀x. ¬P x) → (¬∃x. P x), subj_intro 7.
+
+neg_ex_equi. ⊢ (¬∃x. P x) ↔ (∀x. ¬P x),
+  bij_intro neg_ex neg_ex_rev.
+
+01. 1 ⊢ ¬∀x. P x, hypo.
+02. 2 ⊢ ¬∃x. ¬P x, hypo.
+03. 2 ⊢ ∀x. ¬¬P x, neg_ex 2.
+04. 2 ⊢ ¬¬P x, uq_elim 3.
+05. 2 ⊢ P x, dne 4.
+06. 2 ⊢ ∀x. P x, uq_intro 5.
+07. 1, 2 ⊢ ⊥, neg_elim 1 6.
+08. 1 ⊢ ¬¬∃x. ¬P x, neg_intro 7.
+09. 1 ⊢ ∃x. ¬P x, dne 8.
+neg_uq. ⊢ (¬∀x. P x) → (∃x. ¬P x), subj_intro 9.
+
+01. 1 ⊢ ∃x. ¬P x, hypo.
+02. 2 ⊢ ¬P u, hypo.
+03. 3 ⊢ ∀x. P x, hypo.
+04. 3 ⊢ P u, uq_elim 3.
+05. 3, 2 ⊢ ⊥, neg_elim 2 4.
+06. 1, 3 ⊢ ⊥, ex_elim 1 5.
+07. 1 ⊢ ¬∀x. P x, neg_intro 6.
+neg_uq_rev. ⊢ (∃x. ¬P x) → (¬∀x. P x), subj_intro 7.
+
+neg_uq_equi. ⊢ (¬∀x. P x) ↔ (∃x. ¬P x),
+  bij_intro neg_uq neg_uq_rev.
+
+01. 1 ⊢ ¬∀x. P x → Q x, hypo.
+02. 1 ⊢ ∃x. ¬(P x → Q x), neg_uq 1.
+03. 3 ⊢ ¬(P x → Q x), hypo.
+04. 3 ⊢ P x ∧ ¬Q x, neg_subj 3.
+05. 3 ⊢ ∃x. P x ∧ ¬Q x, ex_intro 4.
+06. 1 ⊢ ∃x. P x ∧ ¬Q x, ex_elim 2 5.
+neg_uq_bounded. ⊢ (¬∀x. P x → Q x) → (∃x. P x ∧ ¬Q x), subj_intro 6.
+
+01. 1 ⊢ ¬∃x. P x ∧ Q x, hypo.
+02. 1 ⊢ ∀x. ¬(P x ∧ Q x), neg_ex 1.
+03. 1 ⊢ ¬(P x ∧ Q x), uq_elim 2.
+04. 1 ⊢ ¬P x ∨ ¬Q x, neg_conj 3.
+05. 1 ⊢ P x → ¬Q x, subj_from_disj 4.
+06. 1 ⊢ ∀x. P x → ¬Q x, uq_intro 5.
+neg_ex_bounded. ⊢ (¬∃x. P x ∧ Q x) → (∀x. P x → ¬Q x), subj_intro 6.
+
+(*/subsection Congruence laws of equivalence *)
+
+01. 1 ⊢ ∀x. P x ↔ Q x, hypo.
+02. 1 ⊢ P u ↔ Q u, uq_elim 1.
+03. 3 ⊢ ∀x. P x, hypo.
+04. 3 ⊢ P u, uq_elim 3.
+05. 1, 3 ⊢ Q u, lsubj_elim 2 4.
+06. 1, 3 ⊢ ∀x. Q x, uq_intro 5.
+07. 1 ⊢ (∀x. P x) → (∀x. Q x), subj_intro 6.
+08. 8 ⊢ ∀x. Q x, hypo.
+09. 8 ⊢ Q u, uq_elim 8.
+10. 1, 8 ⊢ P u, rsubj_elim 2 9.
+11. 1, 8 ⊢ ∀x. P x, uq_intro 10.
+12. 1 ⊢ (∀x. Q x) → (∀x. P x), subj_intro 11.
+13. 1 ⊢ (∀x. P x) ↔ (∀x. Q x), bij_intro 7 12.
+equi_cong_uq. ⊢ (∀x. P x ↔ Q x) →
+  ((∀x. P x) ↔ (∀x. Q x)), subj_intro 13.
+
+01. 1 ⊢ ∀x. P x ↔ Q x, hypo.
+02. 1 ⊢ P u ↔ Q u, uq_elim 1.
+03. 3 ⊢ ∃x. P x, hypo.
+04. 4 ⊢ P u, hypo.
+05. 1, 4 ⊢ Q u, lsubj_elim 2 4.
+06. 1, 4 ⊢ ∃x. Q x, ex_intro 5.
+07. 1, 3 ⊢ ∃x. Q x, ex_elim 3 6.
+08. 1 ⊢ (∃x. P x) → (∃x. Q x), subj_intro 7.
+09. 9 ⊢ ∃x. Q x, hypo.
+10. 10 ⊢ Q u, hypo.
+11. 1, 10 ⊢ P u, rsubj_elim 2 10.
+12. 1, 10 ⊢ ∃x. P x, ex_intro 11.
+13. 1, 9 ⊢ ∃x. P x, ex_elim 9 12.
+14. 1 ⊢ (∃x. Q x) → (∃x. P x), subj_intro 13.
+15. 1 ⊢ (∃x. P x) ↔ (∃x. Q x), bij_intro 8 14.
+equi_cong_ex. ⊢ (∀x. P x ↔ Q x) →
+  ((∃x. P x) ↔ (∃x. Q x)), subj_intro 15.
+
+
+(*/section First order logic with equality *)
+
+(*/subsection Useful theorems *)
+
+01. 1 ⊢ x = y, hypo.
+02. 1 ⊢ y = x, eq_subst 1 eq_refl, P t ↔ t = x.
+eq_symm. ⊢ x = y → y = x, subj_intro 2.
+
+01. 1 ⊢ y = x, hypo.
+02. 1 ⊢ x = y, eq_symm 1.
+03. 1 ⊢ P x → P y, subj_elim eq_subst 2.
+eq_subst_rev. ⊢ y = x → P x → P y, subj_intro 3.
+
+01. 1 ⊢ x = y, hypo.
+02. ⊢ f x = f x, eq_refl.
+03. 1 ⊢ f x = f y, eq_subst 1 2, P t ↔ f x = f t.
+eq_cong. ⊢ x = y → f x = f y, subj_intro 3.
+
+01. 1 ⊢ x = a, hypo.
+02. 2 ⊢ y = b, hypo.
+03. ⊢ f x y = f x y, eq_refl.
+04. 1 ⊢ f x y = f a y, eq_subst 1 3, P t ↔ f x y = f t y.
+05. 1, 2 ⊢ f x y = f a b, eq_subst 2 4, P t ↔ f x y = f a t.
+eq_cong_ii. ⊢ x = a → y = b → f x y = f a b, subj_intro_ii 5.
+
+01. 1 ⊢ x = y, hypo.
+02. 2 ⊢ y = z, hypo.
+03. 1 ⊢ y = x, eq_symm 1.
+04. 1, 2 ⊢ x = z, eq_subst 3 2, P t ↔ t = z.
+eq_trans. ⊢ x = y → y = z → x = z, subj_intro_ii 4.
+
+01. 1 ⊢ y = x, hypo.
+02. 2 ⊢ y = z, hypo.
+03. 1 ⊢ x = y, eq_symm 1.
+04. 1, 2 ⊢ x = z, eq_trans 3 2.
+eq_trans_ll. ⊢ y = x → y = z → x = z, subj_intro_ii 4.
+
+01. 1 ⊢ x = y, hypo.
+02. 2 ⊢ z = y, hypo.
+03. 2 ⊢ y = z, eq_symm 2.
+04. 1, 2 ⊢ x = z, eq_trans 1 3.
+eq_trans_rr. ⊢ x = y → z = y → x = z, subj_intro_ii 4.
+
+01. 1 ⊢ ¬x = y, hypo.
+02. 2 ⊢ y = x, hypo.
+03. 2 ⊢ x = y, eq_symm 2.
+04. 1, 2 ⊢ ⊥, neg_elim 1 3.
+05. 1 ⊢ ¬y = x, neg_intro 4.
+neq_symm. ⊢ ¬x = y → ¬y = x, subj_intro 5.
+
+01. 1 ⊢ ∀x. x = y → A, hypo.
+02. 1 ⊢ y = y → A, uq_elim 1.
+03. ⊢ y = y, eq_refl.
+04. 1 ⊢ A, subj_elim 2 3.
+disused_eq. ⊢ (∀x. x = y → A) → A, subj_intro 4.
+
+(*/subsection Unique existence *)
+
+01. 1 ⊢ ∃x. P x, hypo.
+02. 2 ⊢ ∀x. ∀y. P x → P y → x = y, hypo.
+03. 3 ⊢ P x, hypo.
+04. 2 ⊢ ∀y. P x → P y → x = y, uq_elim 2.
+05. 2 ⊢ P x → P y → x = y, uq_elim 4.
+06. 2, 3 ⊢ P y → x = y, subj_elim 5 3.
+07. 7 ⊢ x = y, hypo.
+08. 3, 7 ⊢ P y, eq_subst 7 3.
+09. 3 ⊢ x = y → P y, subj_intro 8.
+10. 2, 3 ⊢ x = y ↔ P y, bij_intro 9 6.
+11. 2, 3 ⊢ ∀y. x = y ↔ P y, uq_intro 10.
+12. 2, 3 ⊢ ∃x. ∀y. x = y ↔ P y, ex_intro 11.
+13. 1, 2 ⊢ ∃x. ∀y. x = y ↔ P y, ex_elim 1 12.
+ex_uniq_intro. ⊢ (∃x. P x) → (∀x. ∀y. P x → P y → x = y) →
+  (∃x. ∀y. x = y ↔ P y), subj_intro_ii 13.
+
+01. 1 ⊢ ∃x. ∀y. x = y ↔ P y, hypo.
+02. 2 ⊢ ∀y. x = y ↔ P y, hypo.
+03. 2 ⊢ x = x ↔ P x, uq_elim 2.
+04. 2 ⊢ x = x → P x, bij_eliml 3.
+05. ⊢ x = x, eq_refl.
+06. 2 ⊢ P x, subj_elim 4 5.
+07. 2 ⊢ ∃x. P x, ex_intro 6.
+08. 1 ⊢ ∃x. P x, ex_elim 1 7.
+ex_uniq_eliml. ⊢ (∃x. ∀y. x = y ↔ P y) → (∃x. P x), subj_intro 8.
+
+01. 1 ⊢ ∃x. ∀y. x = y ↔ P y, hypo.
+02. 2 ⊢ ∀y. u = y ↔ P y, hypo.
+03. 3 ⊢ P x, hypo.
+04. 4 ⊢ P y, hypo.
+05. 2 ⊢ u = x ↔ P x, uq_elim 2.
+06. 2 ⊢ u = y ↔ P y, uq_elim 2.
+07. 2 ⊢ P x → u = x, bij_elimr 5.
+08. 2 ⊢ P y → u = y, bij_elimr 6.
+09. 3, 2 ⊢ u = x, subj_elim 7 3.
+10. 4, 2 ⊢ u = y, subj_elim 8 4.
+11. 3, 2 ⊢ x = u, eq_symm 9.
+12. 3, 4, 2 ⊢ x = y, eq_trans 11 10.
+13. 1, 3, 4 ⊢ x = y, ex_elim 1 12.
+ex_uniq_elimr. ⊢ (∃x. ∀y. x = y ↔ P y) → P x → P y → x = y,
+  subj_intro_iii 13.
+
+01. 1 ⊢ ∃x. S x ∧ P x, hypo.
+02. 2 ⊢ ∀x. ∀y. P x → P y → x = y, hypo.
+03. 3 ⊢ S x ∧ P x, hypo.
+04. 3 ⊢ S x, conj_eliml 3.
+05. 3 ⊢ P x, conj_elimr 3.
+06. 6 ⊢ x = y, hypo.
+07. 3, 6 ⊢ P y, eq_subst 6 5.
+08. 3 ⊢ x = y → P y, subj_intro 7.
+09. 2 ⊢ ∀y. P x → P y → x = y, uq_elim 2.
+10. 2 ⊢ P x → P y → x = y, uq_elim 9.
+11. 2, 3 ⊢ P y → x = y, subj_elim 10 5.
+12. 2, 3 ⊢ x = y ↔ P y, bij_intro 8 11.
+13. 2, 3 ⊢ ∀y. x = y ↔ P y, uq_intro 12.
+14. 2, 3 ⊢ S x ∧ ∀y. x = y ↔ P y, conj_intro 4 13.
+15. 2, 3 ⊢ ∃x. S x ∧ ∀y. x = y ↔ P y, ex_intro 14.
+16. 1, 2 ⊢ ∃x. S x ∧ ∀y. x = y ↔ P y, ex_elim 1 15.
+ex_uniq_set_intro. ⊢ (∃x. S x ∧ P x) → (∀x. ∀y. P x → P y → x = y) →
+  (∃x. S x ∧ ∀y. x = y ↔ P y), subj_intro_ii 16.
+
+01. 1 ⊢ ∃x. S x ∧ ∀y. x = y ↔ P y, hypo.
+02. 2 ⊢ S u ∧ ∀y. u = y ↔ P y, hypo.
+03. 2 ⊢ ∀y. u = y ↔ P y, conj_elimr 2.
+04. 4 ⊢ P x, hypo.
+05. 5 ⊢ P y, hypo.
+06. 2 ⊢ u = x ↔ P x, uq_elim 3.
+07. 2 ⊢ u = y ↔ P y, uq_elim 3.
+08. 2 ⊢ P x → u = x, bij_elimr 6.
+09. 2 ⊢ P y → u = y, bij_elimr 7.
+10. 4, 2 ⊢ u = x, subj_elim 8 4.
+11. 5, 2 ⊢ u = y, subj_elim 9 5.
+12. 4, 2 ⊢ x = u, eq_symm 10.
+13. 4, 5, 2 ⊢ x = y, eq_trans 12 11.
+14. 1, 4, 5 ⊢ x = y, ex_elim 1 13.
+ex_uniq_set_elimr. ⊢ (∃x. S x ∧ ∀y. x = y ↔ P y) → P x → P y → x = y,
+  subj_intro_iii 14.
+
+01. 1 ⊢ ∃x. P x ∧ ∀y. P y → x = y, hypo.
+02. 2 ⊢ P x ∧ ∀y. P y → x = y, hypo.
+03. 2 ⊢ P x, conj_eliml 2.
+04. 2 ⊢ ∀y. P y → x = y, conj_elimr 2.
+05. 2 ⊢ P y → x = y, uq_elim 4.
+06. 6 ⊢ x = y, hypo.
+07. 2, 6 ⊢ P y, eq_subst 6 3.
+08. 2 ⊢ x = y → P y, subj_intro 7.
+09. 2 ⊢ x = y ↔ P y, bij_intro 8 5.
+10. 2 ⊢ ∀y. x = y ↔ P y, uq_intro 9.
+11. 2 ⊢ ∃x. ∀y. x = y ↔ P y, ex_intro 10.
+12. 1 ⊢ ∃x. ∀y. x = y ↔ P y, ex_elim 1 11.
+ex_uniq_from_mixed_form. ⊢ (∃x. P x ∧ ∀y. P y → x = y) →
+  (∃x. ∀y. x = y ↔ P y), subj_intro 12.
+
+01. 1 ⊢ ∃x. S x ∧ P x ∧ ∀y. P y → x = y, hypo.
+02. 2 ⊢ S x ∧ P x ∧ ∀y. P y → x = y, hypo.
+03. 2 ⊢ S x, conj_elimll 2.
+04. 2 ⊢ P x, conj_elimlr 2.
+05. 2 ⊢ ∀y. P y → x = y, conj_elimr 2.
+06. 2 ⊢ P y → x = y, uq_elim 5.
+07. 7 ⊢ x = y, hypo.
+08. 2, 7 ⊢ P y, eq_subst 7 4.
+09. 2 ⊢ x = y → P y, subj_intro 8.
+10. 2 ⊢ x = y ↔ P y, bij_intro 9 6.
+11. 2 ⊢ ∀y. x = y ↔ P y, uq_intro 10.
+12. 2 ⊢ S x ∧ ∀y. x = y ↔ P y, conj_intro 3 11.
+13. 2 ⊢ ∃x. S x ∧ ∀y. x = y ↔ P y, ex_intro 12.
+14. 1 ⊢ ∃x. S x ∧ ∀y. x = y ↔ P y, ex_elim 1 13.
+ex_uniq_set_from_mixed_form. ⊢ (∃x. S x ∧ P x ∧ ∀y. P y → x = y) →
+  (∃x. S x ∧ ∀y. x = y ↔ P y), subj_intro 14.
+
+01. 1 ⊢ ∀x. P x → Q x, hypo.
+02. 2 ⊢ ∃x. P x ∧ R x, hypo.
+03. 3 ⊢ P u ∧ R u, hypo.
+04. 1 ⊢ P u → Q u, uq_elim 1.
+05. 3 ⊢ P u, conj_eliml 3.
+06. 1, 3 ⊢ Q u, subj_elim 4 5.
+07. 3 ⊢ R u, conj_elimr 3.
+08. 1, 3 ⊢ Q u ∧ R u, conj_intro 6 7.
+09. 1, 3 ⊢ ∃x. Q x ∧ R x, ex_intro 8.
+10. 1, 2 ⊢ ∃x. Q x ∧ R x, ex_elim 2 9.
+ex_weaken_conj. ⊢ (∀x. P x → Q x) → (∃x. P x ∧ R x) →
+  (∃x. Q x ∧ R x), subj_intro_ii 10.
+
+
+(*/note hypo The hypothesis rule, also known as the assumption rule.
+It states that the initial sequent A\_⊢\_A may be introduced, i.e.
+derived from zero premises. The seemingly useless conjunction with
+the verum\_⊤ is an artifact of the way the proof verifier works; it
+does not occur in proof notation and can be ignored. The derivation
+system stated by the rules is sequent natural deduction. In this regard,
+the assumption made by the hypothesis rule appears as a dependency that
+can later be uncharged by [[subj_intro]] or [[neg_intro]]. *)
+
+(*/note conj_intro Conjunction introduction. *)
+
+(*/note conj_eliml Conjunction elimination to obtain the left
+proposition. *)
+
+(*/note conj_elimr Conjunction elimination to obtain the right
+proposition. *)
+
+(*/note disj_introl Disjunction introduction from the left
+proposition. *)
+
+(*/note disj_intror Disjunction introduction from the right
+proposition. *)
+
+(*/note disj_elim Disjunction elimination. This formalizes the proof
+by cases. If C follows in case of A as well as in case of B, then it
+follows from the disjunction A\_∨\_B too. Namely, if this disjunction,
+read "A\_or\_B", is true, then at least one of the propositions A,\_B
+should be true. But if the truth of C follows, regardless of which of
+them it is, then C stays constantly true under the truth of the
+disjunction. Therefore this rule must be valid. *)
+
+(*/note subj_intro Subjunction introduction. It reflects the deduction
+theorem, but is an inference rule, not a metatheorem. *)
+
+(*/note subj_elim Subjunction elimination, a modus ponens that operates
+with sequents rather than plain propositions. *)
+
+(*/note neg_intro Negation introduction. The negation ¬A is derived by
+leading the assumption A to a contradiction. It must be distinguished
+from the classical reductio ad absurdum, (H\_∧\_¬A\_⊢\_⊥)\_→ (H\_⊢\_A),
+which adds the subsequent application of [[dne]] to neg_intro and is
+therefore not part of intuitionistic logic. *)
+
+(*/note bij_intro Bijunction introduction. *)
+
+(*/note bij_eliml Bijunction elimination to obtain the
+left subjunction. *)
+
+(*/note bij_elimr Bijunction elimination to obtain the
+right subjunction. *)
+
+(*/note wk Weakening. If B holds under hypothesis H, it certainly holds
+under the additional hypothesis A. *)
+
+(*/note exch Exchange. States that σ(H) ⊢ A follows from H ⊢ A for any
+permutation σ of conjunction arguments. Since this rule is automatically
+applied by the proof checker, it does not need to be explicitly stated. *)
+
+(*/note uq_elim Universal quantification elimination. A universal
+quantification ∀x.\_P\_x may be specialised to any proposition P\_t,
+where\_t is an arbitrary term. *)
+
+(*/note uq_intro Universal quantification introduction. A universal
+quantification ∀x.\_P\_x is shown from hypotheses H by deriving P\_u
+from H for a parameter u that does not occur free in H and ∀x.\_P\_x.
+That is to say, we show that something holds for all x by parametrizing
+the proof over u. *)
+
+(*/note ex_intro Existential quantification introduction. If P\_t is
+shown for some term t, we may conclude the existence of at least one x
+with P\_x by witness x\_:=\_t. *)
+
+(*/note ex_elim Existential quantification elimination. *)
+
+(*/note subj_intro_ii The rule [[subj_intro]] applied twice consecutively.
+This admissible rule was added for ergonomic reasons, because it cannot
+be expressed and derived as a theorem. *)
+(*/note subj_intro_iii See [[subj_intro_ii]. *)
+(*/note subj_intro_iv See [[subj_intro_ii]. *)
+
+(*/note dne Double negation elimination. It is not valid in
+intuitionistic logic, which is why it requires [[lem]] as a
+dependency.<br>
+<br>
+<b>Proof sketch</b><br>
+Let ¬¬A hold. To be shown is A. According to [[lem]], A ∨ ¬A holds
+unconditionally. Proof by cases. In case A, A already holds. Case ¬A
+contradicts ¬¬A, so A follows from the contradiction via [[efq]].
+Thus, A holds in every case. q.e.d. *)
+
+(*/note efq_from_dne States that [[efq|ex falso quodlibet]] can be
+derived from [[dne|double negation elimination]].<br>
+<br>
+<b>Proof sketch</b><br>
+Let ¬¬A → A hold. To be shown is ⊥\_→\_A, that is, A under the additional
+hypothesis ⊥. Then ⊥ holds even more so under the further hypothesis
+¬A. Since ¬A leads to a contradiction in this respect, ¬¬A must hold.
+Ergo, A follows via the first hypothesis from this finding. q.e.d. *)
+
+(*/note lem_from_dne States that the [[lem|law of excluded middle]] can
+be derived from [[dne|double negation elimination]].<br>
+<br>
+<b>Proof sketch</b><br>
+Suppose that ¬(A ∨ ¬A) holds. The additional assumption A implies
+A\_∨\_¬A, which contradicts the first assumption. So it must
+have been false, that is, ¬A must hold. But then A\_∨\_¬A holds again,
+which again contradicts the first assumption. So the first assumption
+must be false in itself, that is, ¬¬(A\_∨\_¬A) must hold. Now, via [[dne]],
+we finally obtain A\_∨\_¬A. q.e.d. *)
+
+(*/note contraposition Two rules are automatically derived from this
+theorem. When applied to one argument, the contraposition rule<br>
+\_\_(H ⊢ A → B) → (H ⊢ ¬B → ¬A),<br>
+and when applied to two arguments, the modus tollens<br>
+\_\_(H1 ⊢ A → B) → (H2 ⊢ ¬B) → (H1 ∧ H2 ⊢ ¬A).<br>
+<br>
+<b>Proof sketch</b><br>
+From the premises A → B and ¬B we need to derive the conclusion ¬A.
+This means, from the additional premise A we need to derive a
+contradiction. First, B follows from A\_→\_B and A. But then we have
+both ¬B and B, which is already a contradiction. q.e.d. *)
+
+(*/note diag_contra
+Lemma of diagonal arguments.<br>
+<br>
+<b>Proof sketch</b><br>
+Let A ↔ ¬A hold. A contradiction must be derived. Under the
+additional assumption A, ¬A follows by means of the premise, but this
+contradicts the assumption. Therefore, the assumption must be false,
+meaning that ¬A holds. From this, A follows by means of the premise,
+but this again results in a contradiction, which, in contrast to the
+previous one, depends only on the premise alone. q.e.d. *)
+
+(*/note dn_intro
+Double negation introduction.<br>
+<br>
+<b>Proof sketch</b><br>
+Let A hold. To be shown is ¬¬A, which means, from the additional
+assumption ¬A, a contradiction must be derived. Now ¬A already
+contradicts A, so we are done. q.e.d. *)
+
+(*/note tollendo_ponens_left Modus tollendo ponens. *)
+
+(*/note tollendo_ponens_right Modus tollendo ponens. *)
+
+(*/note eq_subst_rev This variant of [[eq_subst]] allows the omission
+of [[eq_symm]], which improves ergonomics. *)
+
+(*/note equi_refl
+Reflexivity law of logical equivalence. *)
+
+(*/note equi_symm
+Symmetry law of logical equivalence. *)
+
+(*/note equi_trans
+Transitive law of logical equivalence. *)
+
+(*/note equi_trans_ll Transitive law of logical equivalence with left
+hand sides bridging. This variant of [[equi_trans]] allows the omission
+of [[equi_symm]], which improves ergonomics. *)
+
+(*/note equi_trans_rr Transitive law of logical equivalence with right
+hand sides bridging. This variant of [[equi_trans]] allows the omission
+of [[equi_symm]], which improves ergonomics. *)
+
+(*/note equi_cong_neg Congruence rule of logical equivalence with
+respect to negation. *)
+
+(*/note equi_cong_conj Congruence rule of logical equivalence with
+respect to conjunction. *)
+
+(*/note equi_cong_disj Congruence rule of logical equivalence with
+respect to disjunction. *)
+
+(*/note equi_cong_subj Congruence rule of logical equivalence with
+respect to subjunction. *)
+
+(*/note equi_cong_bij Congruence rule of logical equivalence with
+respect to bijunction. *)
+
+(*/note rsubj_tollens Modus tollens with respect to the
+right subjunction. *)
+
+(*/note equi_cong_uq Congruence rule of logical equivalence with
+respect to universal quantification. *)
+
+(*/note equi_cong_ex Congruence rule of logical equivalence with
+respect to existential quantification. *)
+
+(*/note eq_cong Congruence rule for function application. *)
+
+(*/note eq_cong_ii Congruence rule for function application. *)
+
+(*/note eq_symm Symmetry law of equality. *)
+
+(*/note eq_trans Transitive law of equality. *)
+
+(*/note eq_trans_ll Transitive law of equality with left hand
+sides bridging. This variant of [[eq_trans]] allows the omission
+of [[eq_symm]], which improves ergonomics. *)
+
+(*/note eq_trans_rr Transitive law of equality with right hand sides
+bridging. This variant of [[eq_trans]] allows the omission
+of [[eq_symm]], which improves ergonomics. *)
+
+(*/note ex_uniq_intro
+This theorem states that unqiue existence<br>
+\_\_(∃!x. P x) :↔ (∃x. ∀y. x = y ↔ P y)<br>
+can be introduced by showing existence and unqiueness separately.
+Usually, the existant class should be a [[set_equi|set]]. For this
+purpose, [[ex_uniq_set_intro]] is provided. *)
+
+(*/note ex_uniq_eliml Existence from
+[[ex_uniq_intro|unqiue existence]]. *)
+
+(*/note ex_uniq_elimr Uniqueness from
+[[ex_uniq_intro|unique existence]]. *)
+
+(*/note ex_uniq_set_intro
+This theorem states that unqiue existence<br>
+\_\_(∃!x. set x ∧ P x) ↔ (∃x. set x ∧ ∀y. x = y ↔ P y)<br>
+can be introduced by showing existence and unqiueness separately. *)
