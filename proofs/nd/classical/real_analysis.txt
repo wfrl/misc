@@ -78,7 +78,7 @@ nat_unbounded. ⊢ ¬(∃b. b ∈ ℝ ∧ upper_bound b ℕ),
 14. 3, 9 ⊢ n ∈ ℕ ∧ x < n, conj_intro 10 13.
 15. 3, 9 ⊢ ∃n. n ∈ ℕ ∧ x < n, ex_intro 14.
 16. 3 ⊢ ∃n. n ∈ ℕ ∧ x < n, ex_elim 8 15.
-archimedean_property. ⊢ x ∈ ℝ → ∃n. n ∈ ℕ ∧ x < n,
+Archimedean_property. ⊢ x ∈ ℝ → ∃n. n ∈ ℕ ∧ x < n,
   subj_intro 16.
 
 01. 1 ⊢ x ∈ ℝ, hypo.
@@ -88,7 +88,7 @@ archimedean_property. ⊢ x ∈ ℝ → ∃n. n ∈ ℕ ∧ x < n,
 05. 3 ⊢ ¬(x = 0), neq_symm 4.
 06. 1, 2, 3 ⊢ y/x ∈ ℝ, rdiv_closed 2 1 5.
 07. 1, 2, 3 ⊢ ∃n. n ∈ ℕ ∧ y/x < n,
-  archimedean_property 6.
+  Archimedean_property 6.
 08. 8 ⊢ n ∈ ℕ ∧ y/x < n, hypo.
 09. 8 ⊢ n ∈ ℕ, conj_eliml 8.
 10. 8 ⊢ n ∈ ℝ, incl_elim nat_incl_in_real 9.
@@ -101,14 +101,14 @@ archimedean_property. ⊢ x ∈ ℝ → ∃n. n ∈ ℕ ∧ x < n,
 16. 1, 2, 3, 8 ⊢ n ∈ ℕ ∧ y < n⋅x, conj_intro 9 15.
 17. 1, 2, 3, 8 ⊢ ∃n. n ∈ ℕ ∧ y < n⋅x, ex_intro 16.
 18. 1, 2, 3 ⊢ ∃n. n ∈ ℕ ∧ y < n⋅x, ex_elim 7 17.
-archimedean_property_corollary. ⊢ x ∈ ℝ → y ∈ ℝ →
+Archimedean_property_corollary. ⊢ x ∈ ℝ → y ∈ ℝ →
   0 < x → ∃n. n ∈ ℕ ∧ y < n⋅x, subj_intro_iii 18.
 
 01. 1 ⊢ ε ∈ ℝ, hypo.
 02. 2 ⊢ 0 < ε, hypo.
 03. ⊢ 1 ∈ ℝ, calc.
 04. 1, 2 ⊢ ∃n. n ∈ ℕ ∧ 1 < n⋅ε,
-  archimedean_property_corollary 1 3 2.
+  Archimedean_property_corollary 1 3 2.
 05. 5 ⊢ n ∈ ℕ ∧ 1 < n⋅ε, hypo.
 06. 5 ⊢ n ∈ ℕ, conj_eliml 5.
 07. 5 ⊢ 1 < n⋅ε, conj_elimr 5.
@@ -129,5 +129,163 @@ archimedean_property_corollary. ⊢ x ∈ ℝ → y ∈ ℝ →
 22. 1, 2, 5 ⊢ n ∈ ℕ ∧ 0 < n ∧ 1/n < ε, conj_intro 21 20.
 23. 1, 2, 5 ⊢ ∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < ε, ex_intro 22.
 24. 1, 2 ⊢ ∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < ε, ex_elim 4 23.
-archimedean_property_corollary_ii. ⊢ ε ∈ ℝ → 0 < ε →
+Archimedean_property_corollary_ii. ⊢ ε ∈ ℝ → 0 < ε →
   ∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < ε, subj_intro_ii 24.
+
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ 0 ≤ a, hypo.
+03. 3 ⊢ ∀n. n ∈ ℕ ∧ 0 < n → a ≤ 1/n, hypo.
+04. 1 ⊢ 0 < a → ∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < a,
+  Archimedean_property_corollary_ii 1.
+05. 1 ⊢ ¬(∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < a) → ¬0 < a,
+  contraposition 4.
+06. ⊢ (∀n. n ∈ ℕ ∧ 0 < n → ¬1/n < a) →
+  ¬∃n. n ∈ ℕ ∧ 0 < n ∧ 1/n < a, neg_ex_bounded_rev.
+07. 1 ⊢ (∀n. n ∈ ℕ ∧ 0 < n → ¬1/n < a) → ¬0 < a,
+  hypothetical_syllogism 6 5.
+08. 8 ⊢ n ∈ ℕ ∧ 0 < n, hypo.
+09. 8 ⊢ n ∈ ℕ, conj_eliml 8.
+10. 8 ⊢ n ∈ ℝ, incl_elim nat_incl_in_real 9.
+11. 8 ⊢ 0 < n, conj_elimr 8.
+12. 8 ⊢ ¬(0 = n), neq_from_lt 11.
+13. 8 ⊢ ¬(n = 0), neq_symm 12.
+14. 8 ⊢ 1/n ∈ ℝ, rreci_closed 10 13.
+15. 3, 8 ⊢ a ≤ 1/n, uq_bounded_elim 3 8.
+16. 16 ⊢ 1/n < a, hypo.
+17. 1, 3, 8, 16 ⊢ a < a, rle_lt_trans 1 14 1 15 16.
+18. ⊢ ¬(a < a), lt_irrefl.
+19. 1, 3, 8, 16 ⊢ ⊥, neg_elim 18 17.
+20. 1, 3, 8 ⊢ ¬1/n < a, neg_intro 19.
+21. 1, 3 ⊢ n ∈ ℕ ∧ 0 < n → ¬1/n < a, subj_intro 20.
+22. 1, 3 ⊢ ∀n. n ∈ ℕ ∧ 0 < n → ¬1/n < a, uq_intro 21.
+23. 1, 3 ⊢ ¬0 < a, subj_elim 7 22.
+24. ⊢ 0 ∈ ℝ, calc.
+25. 1, 3 ⊢ a ≤ 0, rlt_neg 24 1 23.
+26. 1, 2, 3 ⊢ a = 0, rle_antisym 1 24 25 2.
+Archimedean_property_corollary_iii. ⊢ a ∈ ℝ → 0 ≤ a →
+  (∀n. n ∈ ℕ ∧ 0 < n → a ≤ 1/n) → a = 0,
+  subj_intro_iii 26.
+
+(*/section Convergent sequences *)
+
+converges_equi. ⊢ converges a L ↔ ∀ε. ε ∈ ℝ → 0 < ε →
+  ∃n0. n0 ∈ ℕ ∧ ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - L) < ε, def.
+
+converges_fold. ⊢ (∀ε. ε ∈ ℝ → 0 < ε →
+  ∃n0. n0 ∈ ℕ ∧ ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - L) < ε) →
+  converges a L, bij_elimr converges_equi.
+
+01. 1 ⊢ c ∈ ℝ, hypo.
+02. 2 ⊢ ∀n. n ∈ ℕ → app a n = c, hypo.
+03. 3 ⊢ ε ∈ ℝ, hypo.
+04. 4 ⊢ 0 < ε, hypo.
+05. 5 ⊢ n ∈ ℕ, hypo.
+06. 6 ⊢ 0 ≤ n, hypo.
+07. 1 ⊢ c - c = 0, rsub_self 1.
+08. 2, 5 ⊢ app a n = c, uq_bounded_elim 2 5.
+09. 1, 2, 5 ⊢ app a n - c = 0,
+  eq_subst_rev 8 7, P t ↔ t - c = 0.
+10. 1, 2, 5 ⊢ abs(app a n - c) = abs 0,
+  eq_cong 9, f t = abs t.
+11. ⊢ 0 ∈ ℝ, calc.
+12. ⊢ 0 ≤ 0, calc.
+13. ⊢ abs 0 = 0, rabs_eql 11 12.
+14. 1, 2, 5 ⊢ abs(app a n - c) = 0, eq_trans 10 13.
+15. 1, 2, 4, 5 ⊢ abs(app a n - c) < ε, eq_lt_trans 14 4.
+16. 1, 2, 4, 5, 6 ⊢ abs(app a n - c) < ε, wk 15.
+17. 1, 2, 4 ⊢ n ∈ ℕ → 0 ≤ n →
+  abs(app a n - c) < ε, subj_intro_ii 16.
+18. 1, 2, 4 ⊢ ∀n. n ∈ ℕ → 0 ≤ n →
+  abs(app a n - c) < ε, uq_intro 17.
+19. 1, 2, 4 ⊢ 0 ∈ ℕ ∧ ∀n. n ∈ ℕ → 0 ≤ n →
+  abs(app a n - c) < ε, conj_intro zero_in_nat 18.
+20. 1, 2, 4 ⊢ ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - c) < ε, ex_intro 19.
+21. 1, 2 ⊢ 0 < ε → ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - c) < ε, subj_intro 20.
+22. 1, 2, 3 ⊢ 0 < ε → ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - c) < ε, wk 21.
+23. 1, 2 ⊢ ε ∈ ℝ → 0 < ε → ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - c) < ε, subj_intro 22.
+24. 1, 2 ⊢ ∀ε. ε ∈ ℝ → 0 < ε → ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - c) < ε, uq_intro 23.
+25. 1, 2 ⊢ converges a c, converges_fold 24.
+const_converges. ⊢ c ∈ ℝ → (∀n. n ∈ ℕ → app a n = c) →
+  converges a c, subj_intro_ii 25.
+
+(*/note nat_unbounded
+This theorem states that the set of natural numbers is unbounded
+in the real numbers.<br>
+<br>
+<b>Proof idea</b><br>
+Suppose ℕ is bounded. Then, according to [[lub_property]], ℕ would have
+a [[is_sup_equi|supremum]]\_s. A number just before s is no longer an
+upper bound, which means that there must occur a natural number m after
+this number. Starting from m, we shift by adding a natural number, to
+point beyond s, but this brings us back to ℕ, since ℕ is closed under
+addition. Thus, the bound has been exceeded, which is absurd.<br>
+<br>
+<b>Proof sketch</b><br>
+Suppose ℕ is bounded. Then, according to [[lub_property]], ℕ would have
+a [[is_sup_equi|supremum]] s in ℝ. We play off against each other that
+s is both an upper bound and the least upper bound. First, s\_−\_1
+cannot be an upper bound, since it is smaller than the least upper
+bound. Unfolding the definition of [[upper_bound_equi|upper_bound]],
+this means ¬∀m\_∈\_ℕ. m\_≤\_s\_−\_1, which can be transformed to ∃m\_∈\_ℕ.
+s\_−\_1\_<\_m. So there is an m\_∈\_ℕ with s\_−\_1\_<\_m, which can be
+transformed to s\_<\_m\_+\_1. However, because m\_+\_1 ∈ ℕ, m\_+\_1 ≤ s
+must hold, since s is an upper bound of ℕ. This leads to s\_<\_s, which
+is absurd. Therefore, the assumption is false. q.e.d. *)
+
+(*/note Archimedean_property
+The Archimedean property states that every real number is exceeded by a
+natural number. See also corollaries [[Archimedean_property_corollary|i]],
+[[Archimedean_property_corollary_ii|ii]],
+[[Archimedean_property_corollary_iii|iii]].<br>
+<br>
+<b>Proof idea</b><br>
+An equivalent transformation of [[nat_unbounded]].<br>
+<br>
+<b>Proof sketch</b><br>
+Let x ∈ ℝ be arbitrary. According to [[nat_unbounded]], ℕ is
+unbounded, which means that ¬upper_bound\_x\_ℕ must hold. Unfolding the
+definition of [[upper_bound_equi|upper_bound]], this means
+¬∀n\_∈\_ℕ. n\_≤\_x, which can be transformed to ∃n\_∈\_ℕ. x\_<\_n.
+q.e.d. *)
+
+(*/note Archimedean_property_corollary
+<b>Proof idea</b><br>
+Obtained by applying the [[Archimedean_property|Archimedean property]]
+to y/x.<br>
+<br>
+<b>Proof sketch</b><br>
+Since x ≠ 0, the quotient y/x ∈ ℝ exists. Thus ∃n\_∈\_ℕ. y/x\_<\_n
+from the [[Archimedean_property|Archimedean property]]. And since x is
+positive, the inequality y/x\_<\_n can be transformed into y\_<\_n⋅x.
+q.e.d. *)
+
+(*/note Archimedean_property_corollary_ii
+<b>Proof idea</b><br>
+Obtained from [[Archimedean_property_corollary|corollary i]]
+with x\_:=\_ε and y\_:=\_1 by transforming the inequality.<br>
+<br>
+<b>Proof sketch</b><br>
+We specialise [[Archimedean_property_corollary|corollary i]] with
+x\_:=\_ε and y\_:=\_1. So there is an n\_∈\_ℕ with 1\_<\_n⋅ε.
+In particular, n⋅ε must then be positive, which means that n must also
+be positive, since ε is positive. Thus we may transform the
+inequality to 1/n\_<\_ε. q.e.d. *)
+
+(*/note Archimedean_property_corollary_iii
+<b>Proof idea</b><br>
+In essence, this is merely the [[contraposition]] of
+[[Archimedean_property_corollary_ii|corollary ii]].<br>
+<br>
+<b>Proof sketch</b><br>
+Let a ∈ ℝ with 0 ≤ a be arbritary. We specialise
+[[Archimedean_property_corollary_ii|corollary ii]] with ε\_:=\_a to
+obtain<br>
+\_\_0 < a → ∃n ∈ ℕ. 0 < n ∧ 1/n < a.<br>
+So in contraposition,<br>
+\_\_(∀n ∈ ℕ. 0 < n → a ≤ 1/n) → a ≤ 0.<br>
+And since 0 ≤ a, the conclusion is equivalent to a = 0. q.e.d. *)
