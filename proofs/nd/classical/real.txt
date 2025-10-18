@@ -1183,6 +1183,23 @@ rle_compat_mull. ⊢ a ∈ ℝ → b ∈ ℝ → c ∈ ℝ →
 
 01. 1 ⊢ a ∈ ℝ, hypo.
 02. 2 ⊢ b ∈ ℝ, hypo.
+03. 3 ⊢ 0 < a, hypo.
+04. 4 ⊢ 0 < b, hypo.
+05. 3 ⊢ 0 ≤ a, le_from_lt 3.
+06. 4 ⊢ 0 ≤ b, le_from_lt 4.
+07. 1, 2, 3, 4 ⊢ 0 ≤ a⋅b, rle_compat_mul 1 2 5 6.
+08. 3 ⊢ ¬(0 = a), neq_from_lt 3.
+09. 4 ⊢ ¬(0 = b), neq_from_lt 4.
+10. 3 ⊢ ¬(a = 0), neq_symm 8.
+11. 4 ⊢ ¬(b = 0), neq_symm 9.
+12. 1, 2, 3, 4 ⊢ ¬(a⋅b = 0), rmul_non_zero 1 2 10 11.
+13. 1, 2, 3, 4 ⊢ ¬(0 = a⋅b), neq_symm 12.
+14. 1, 2, 3, 4 ⊢ 0 < a⋅b, lt_intro 7 13.
+rlt_compat_mul. ⊢ a ∈ ℝ → b ∈ ℝ →
+  0 < a → 0 < b → 0 < a⋅b, subj_intro_iv 14.
+
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ b ∈ ℝ, hypo.
 03. 3 ⊢ c ∈ ℝ, hypo.
 04. 4 ⊢ a < b, hypo.
 05. 5 ⊢ 0 < c, hypo.
@@ -1203,6 +1220,20 @@ rle_compat_mull. ⊢ a ∈ ℝ → b ∈ ℝ → c ∈ ℝ →
   subj_intro_ii 16.
 rlt_compat_mulr. ⊢ a ∈ ℝ → b ∈ ℝ → c ∈ ℝ →
   a < b → 0 < c → a⋅c < b⋅c, subj_intro_iii 17.
+
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ b ∈ ℝ, hypo.
+03. 3 ⊢ c ∈ ℝ, hypo.
+04. 4 ⊢ a < b, hypo.
+05. 5 ⊢ 0 < c, hypo.
+06. 1, 2, 3, 4, 5 ⊢ a⋅c < b⋅c, rlt_compat_mulr 1 2 3 4 5.
+07. 1, 3 ⊢ c⋅a = a⋅c, rmul_comm 3 1.
+08. 2, 3 ⊢ b⋅c = c⋅b, rmul_comm 2 3.
+09. 1, 2, 3, 4, 5 ⊢ c⋅a < b⋅c, eq_lt_trans 7 6.
+10. 1, 2, 3, 4, 5 ⊢ c⋅a < c⋅b, lt_eq_trans 9 8.
+11. 1, 2, 3 ⊢ a < b → 0 < c → c⋅a < c⋅b, subj_intro_ii 10.
+rlt_compat_mull. ⊢ a ∈ ℝ → b ∈ ℝ → c ∈ ℝ →
+  a < b → 0 < c → c⋅a < c⋅b, subj_intro_iii 11.
 
 01. 1 ⊢ a ∈ ℝ, hypo.
 02. 2 ⊢ 0 < a, hypo.
@@ -1358,6 +1389,36 @@ rmul_positive_rl. ⊢ a ∈ ℝ → b ∈ ℝ →
 rlt_compat_div. ⊢ a ∈ ℝ → b ∈ ℝ → c ∈ ℝ →
   a < b → 0 < c → a/c < b/c, subj_intro_iii 16.
 
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ 0 < a, hypo.
+03. 2 ⊢ ¬(0 = a), neq_from_lt 2.
+04. 2 ⊢ ¬(a = 0), neq_symm 3.
+05. 1, 2 ⊢ /a ∈ ℝ, rinv_closed 1 4.
+rinv_closed_positive. ⊢ a ∈ ℝ → 0 < a → /a ∈ ℝ,
+  subj_intro_ii 5.
+
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ b ∈ ℝ, hypo.
+03. 3 ⊢ 0 < a, hypo.
+04. 4 ⊢ 0 < b, hypo.
+05. 2, 4 ⊢ /b ∈ ℝ, rinv_closed_positive 2 4.
+06. 2, 4 ⊢ 0 < /b, rinv_positive 2 4.
+07. 1, 2, 3, 4 ⊢ 0 < a⋅/b, rlt_compat_mul 1 5 3 6.
+08. ⊢ a/b = a⋅/b, rdiv_eq.
+09. ⊢ a⋅/b = a/b, eq_symm 8.
+10. 1, 2, 3, 4 ⊢ 0 < a/b, lt_eq_trans 7 9.
+rdiv_positive. ⊢ a ∈ ℝ → b ∈ ℝ →
+  0 < a → 0 < b → 0 < a/b, subj_intro_iv 10.
+
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ b ∈ ℝ, hypo.
+03. 3 ⊢ 0 < b, hypo.
+04. 3 ⊢ ¬(0 = b), neq_from_lt 3.
+05. 3 ⊢ ¬(b = 0), neq_symm 4.
+06. 1, 2, 3 ⊢ a/b ∈ ℝ, rdiv_closed 1 2 5.
+rdiv_closed_positive. ⊢ a ∈ ℝ → b ∈ ℝ →
+  0 < b → a/b ∈ ℝ, subj_intro_iii 6.
+
 
 (*/section Absolute value *)
 
@@ -1480,6 +1541,42 @@ rabs_ge_arg. ⊢ x ∈ ℝ → x ≤ abs x, subj_intro 27.
 
 14. 1 ⊢ -x ≤ abs x, disj_elim 2 9 13.
 rabs_ge_neg_arg. ⊢ x ∈ ℝ → -x ≤ abs x, subj_intro 14.
+
+01. 1 ⊢ x ∈ ℝ, hypo.
+02. ⊢ 0 ∈ ℝ, calc.
+03. 1 ⊢ 0 ≤ x ∨ x < 0, rle_lt_tricho 2 1.
+04. 4 ⊢ 0 ≤ x, hypo.
+05. 1, 4 ⊢ abs x = x, rabs_eql 1 4.
+06. 1, 4 ⊢ x = abs x, eq_symm 5.
+07. 1, 4 ⊢ 0 ≤ abs x, le_eq_trans 4 6.
+08. 8 ⊢ x < 0, hypo.
+09. 8 ⊢ x ≤ 0, le_from_lt 8.
+10. 1, 8 ⊢ abs x = -x, rabs_non_positive 1 9.
+11. 1, 8 ⊢ -x = abs x, eq_symm 10.
+12. 1, 8 ⊢ -0 ≤ -x, rle_neg_swaps 1 2 9.
+13. ⊢ 0 = -0, calc.
+14. 1, 8 ⊢ 0 ≤ -x, eq_le_trans 13 12.
+15. 1, 8 ⊢ 0 ≤ abs x, le_eq_trans 14 11.
+16. 1 ⊢ 0 ≤ abs x, disj_elim 3 7 15.
+rabs_is_non_negative. ⊢ x ∈ ℝ → 0 ≤ abs x,
+  subj_intro 16.
+
+01. 1 ⊢ x ∈ ℝ, hypo.
+02. 2 ⊢ abs x = 0, hypo.
+03. 1 ⊢ x ≤ abs x, rabs_ge_arg 1.
+04. 1, 2 ⊢ x ≤ 0, le_eq_trans 3 2.
+05. 1 ⊢ -x ≤ abs x, rabs_ge_neg_arg 1.
+06. 1, 2 ⊢ -x ≤ 0, le_eq_trans 5 2.
+07. ⊢ 0 ∈ ℝ, calc.
+08. 1 ⊢ -x ∈ ℝ, rneg_closed 1.
+09. 1, 2 ⊢ -0 ≤ -(-x), rle_neg_swaps 8 7 6.
+10. 1 ⊢ -(-x) = x, rneg_involution 1.
+11. 1, 2 ⊢ -0 ≤ x, le_eq_trans 9 10.
+12. ⊢ 0 = -0, calc.
+13. 1, 2 ⊢ 0 ≤ x, eq_le_trans 12 11.
+14. 1, 2 ⊢ x = 0, rle_antisym 1 7 4 13.
+rabs_definiteness. ⊢ x ∈ ℝ → abs x = 0 → x = 0,
+  subj_intro_ii 14.
 
 01. 1 ⊢ x ∈ ℝ, hypo.
 02. ⊢ 0 ≤ x ∨ ¬0 ≤ x, lem.

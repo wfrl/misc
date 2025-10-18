@@ -175,6 +175,16 @@ converges_fold. ⊢ (∀ε. ε ∈ ℝ → 0 < ε →
   ∃n0. n0 ∈ ℕ ∧ ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - L) < ε) →
   converges a L, bij_elimr converges_equi.
 
+01. 1 ⊢ converges a L, hypo.
+02. 1 ⊢ ∀ε. ε ∈ ℝ → 0 < ε → ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - L) < ε,
+  lsubj_elim converges_equi 1.
+03. 1 ⊢ ε ∈ ℝ → 0 < ε → ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - L) < ε, uq_elim 2.
+converges_elim. ⊢ converges a L → ε ∈ ℝ → 0 < ε →
+  ∃n0. n0 ∈ ℕ ∧ ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - L) < ε,
+  subj_intro 3.
+
 01. 1 ⊢ c ∈ ℝ, hypo.
 02. 2 ⊢ ∀n. n ∈ ℕ → app a n = c, hypo.
 03. 3 ⊢ ε ∈ ℝ, hypo.
@@ -212,6 +222,102 @@ converges_fold. ⊢ (∀ε. ε ∈ ℝ → 0 < ε →
 25. 1, 2 ⊢ converges a c, converges_fold 24.
 const_converges. ⊢ c ∈ ℝ → (∀n. n ∈ ℕ → app a n = c) →
   converges a c, subj_intro_ii 25.
+
+01. 1 ⊢ r ∈ ℝ, hypo.
+02. 2 ⊢ L ∈ ℝ, hypo.
+03. 3 ⊢ map a ℕ ℝ, hypo.
+04. 4 ⊢ converges a L, hypo.
+05. 5 ⊢ ∀n. n ∈ ℕ → app b n = r⋅(app a n), hypo.
+06. 6 ⊢ ε ∈ ℝ, hypo.
+07. 7 ⊢ 0 < ε, hypo.
+08. 8 ⊢ n ∈ ℕ, hypo.
+09. 9 ⊢ n0 ≤ n, hypo.
+10. ⊢ r = 0 ∨ ¬(r = 0), lem.
+
+11. 11 ⊢ r = 0, hypo.
+12. 3, 8 ⊢ app a n ∈ ℝ, map_app_in_cod 3 8.
+13. 3, 8 ⊢ 0⋅(app a n) = 0, rmul_lzero 12.
+14. 3, 11, 8 ⊢ r⋅(app a n) = 0,
+  eq_subst_rev 11 13, P t ↔ t⋅(app a n) = 0.
+15. 5, 8 ⊢ app b n = r⋅(app a n), uq_bounded_elim 5 8.
+16. 3, 5, 11, 8 ⊢ app b n = 0, eq_trans 15 14.
+17. 3, 5, 11 ⊢ n ∈ ℕ → app b n = 0, subj_intro 16.
+18. 3, 5, 11 ⊢ ∀n. n ∈ ℕ → app b n = 0, uq_intro 17.
+19. ⊢ 0 ∈ ℝ, calc.
+20. 3, 5, 11 ⊢ converges b 0, const_converges 19 18.
+21. 2 ⊢ 0⋅L = 0, rmul_lzero 2.
+22. 2, 11 ⊢ r⋅L = 0, eq_subst_rev 11 21, P t ↔ t⋅L = 0.
+23. 2, 3, 5, 11 ⊢ converges b (r⋅L),
+  eq_subst_rev 22 20, P t ↔ converges b t.
+
+24. 24 ⊢ ¬(r = 0), hypo.
+25. 25 ⊢ abs r = 0, hypo.
+26. 1, 25 ⊢ r = 0, rabs_definiteness 1 25.
+27. 1, 24, 25 ⊢ ⊥, neg_elim 24 26.
+28. 1, 24 ⊢ ¬(abs r = 0), neg_intro 27.
+29. 1, 24 ⊢ ¬(0 = abs r), neq_symm 28.
+30. 1 ⊢ 0 ≤ abs r, rabs_is_non_negative 1.
+31. 1, 24 ⊢ 0 < abs r, lt_intro 30 29.
+32. 1 ⊢ abs r ∈ ℝ, rabs_closed 1.
+33. 1, 6, 24 ⊢ ε/(abs r) ∈ ℝ, rdiv_closed_positive 6 32 31.
+34. 1, 6, 7, 24 ⊢ 0 < ε/(abs r), rdiv_positive 6 32 7 31.
+35. 1, 4, 6, 7, 24 ⊢ ∃n0. n0 ∈ ℕ ∧ ∀n. n ∈ ℕ → n0 ≤ n →
+  abs(app a n - L) < ε/(abs r), converges_elim 4 33 34.
+36. 36 ⊢ n0 ∈ ℕ ∧ ∀n. n ∈ ℕ → n0 ≤ n →
+  abs(app a n - L) < ε/(abs r), hypo.
+37. 36 ⊢ n0 ∈ ℕ, conj_eliml 36.
+38. 36 ⊢ ∀n. n ∈ ℕ → n0 ≤ n →
+  abs(app a n - L) < ε/(abs r), conj_elimr 36.
+39. 8, 36 ⊢ n0 ≤ n → abs(app a n - L) < ε/(abs r),
+  uq_bounded_elim 38 8.
+40. 8, 9, 36 ⊢ abs(app a n - L) < ε/(abs r), subj_elim 39 9.
+41. 2, 3, 8 ⊢ app a n - L ∈ ℝ, rsub_closed 12 2.
+42. 2, 3, 8 ⊢ abs(app a n - L) ∈ ℝ, rabs_closed 41.
+43. 1, 2, 3, 6, 8, 9, 24, 36 ⊢
+  (abs r)⋅abs(app a n - L) < (abs r)⋅(ε/(abs r)),
+  rlt_compat_mull 42 33 32 40 31.
+44. 1, 2, 3, 8 ⊢ abs(r⋅(app a n - L)) = (abs r)⋅abs(app a n - L),
+  rabs_dist_mul 1 41.
+45. 1, 2, 3, 8 ⊢ r⋅(app a n - L) = r⋅app a n - r⋅L,
+  rmul_distl_sub 1 12 2.
+46. 1, 2, 3, 8 ⊢ abs(r⋅(app a n - L)) = abs(r⋅app a n - r⋅L),
+  eq_cong 45, f t = abs t.
+47. 1, 2, 3, 8 ⊢ abs(r⋅app a n - r⋅L) = (abs r)⋅abs(app a n - L),
+  eq_trans_ll 46 44.
+48. 1, 2, 3, 5, 8 ⊢ abs(app b n - r⋅L) = (abs r)⋅abs(app a n - L),
+  eq_subst_rev 15 47, P t ↔ abs(t - r⋅L) = (abs r)⋅abs(app a n - L).
+49. 1, 2, 3, 5, 6, 8, 9, 24, 36 ⊢
+  abs(app b n - r⋅L) < (abs r)⋅(ε/(abs r)),
+  eq_lt_trans 48 43.
+50. 1, 6, 24 ⊢ (abs r)⋅(ε/(abs r)) = ε/(abs r)⋅(abs r),
+  rmul_comm 32 33.
+51. 1, 6, 24 ⊢ ε/(abs r)⋅(abs r) = ε, rdiv_cancel 6 32 28.
+52. 1, 6, 24 ⊢ (abs r)⋅(ε/(abs r)) = ε, eq_trans 50 51.
+53. 1, 2, 3, 5, 24, 36, 6, 8, 9 ⊢
+  abs(app b n - r⋅L) < ε, lt_eq_trans 49 52.
+54. 1, 2, 3, 5, 24, 36, 6 ⊢ n ∈ ℕ → n0 ≤ n →
+  abs(app b n - r⋅L) < ε, subj_intro_ii 53.
+55. 1, 2, 3, 5, 24, 36, 6 ⊢ ∀n. n ∈ ℕ →
+  n0 ≤ n → abs(app b n - r⋅L) < ε, uq_intro 54.
+56. 1, 2, 3, 5, 24, 36, 6 ⊢ n0 ∈ ℕ ∧ ∀n. n ∈ ℕ →
+  n0 ≤ n → abs(app b n - r⋅L) < ε, conj_intro 37 55.
+57. 1, 2, 3, 5, 24, 6, 36 ⊢ ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app b n - r⋅L) < ε, ex_intro 56.
+58. 1, 2, 3, 4, 5, 24, 6, 7 ⊢ ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app b n - r⋅L) < ε, ex_elim 35 57.
+59. 1, 2, 3, 4, 5, 24 ⊢ ε ∈ ℝ → 0 < ε → ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app b n - r⋅L) < ε, subj_intro_ii 58.
+60. 1, 2, 3, 4, 5, 24 ⊢ ∀ε. ε ∈ ℝ → 0 < ε → ∃n0. n0 ∈ ℕ ∧
+  ∀n. n ∈ ℕ → n0 ≤ n → abs(app b n - r⋅L) < ε, uq_intro 59.
+61. 1, 2, 3, 4, 5, 24 ⊢ converges b (r⋅L), converges_fold 60.
+
+62. 1, 2, 3, 4, 5 ⊢ converges b (r⋅L), disj_elim 10 23 61.
+63. 1, 2, 3, 4 ⊢ (∀n. n ∈ ℕ → app b n = r⋅(app a n)) →
+  converges b (r⋅L), subj_intro 62.
+converges_mul_const. ⊢ r ∈ ℝ → L ∈ ℝ → map a ℕ ℝ →
+  converges a L → (∀n. n ∈ ℕ → app b n = r⋅(app a n)) →
+  converges b (r⋅L), subj_intro_iv 63.
+
 
 (*/note nat_unbounded
 This theorem states that the set of natural numbers is unbounded
@@ -289,3 +395,25 @@ obtain<br>
 So in contraposition,<br>
 \_\_(∀n ∈ ℕ. 0 < n → a ≤ 1/n) → a ≤ 0.<br>
 And since 0 ≤ a, the conclusion is equivalent to a = 0. q.e.d. *)
+
+(*/note converges_equi A sequence a:\_ℕ\_→\_ℝ is said to <i>converge</i>
+to the limit\_L if, for every positive\_ε, there exists an index
+n<sub>0</sub> from which onwards all sequence values lie within the
+ε-neighborhood of\_L. *)
+
+(*/note const_converges
+This theorem states that any sequence (a<sub>n</sub>) with
+a<sub>n</sub>\_:=\_c [[converges_equi|converges]] to\_c. That is,
+any constant sequence converges to its only value.<br>
+<br>
+<b>Proof idea</b><br>
+We consider an arbitrary ε. Since the sequence (a<sub>n</sub>) stays
+constant at the center\_c of the ε-neighborhood of\_c, it trivially does
+not leave it.<br>
+<br>
+<b>Proof sketch</b><br>
+Let ε > 0 be arbitrary. The inequality<br>
+\_\_|a<sub>n</sub> − c| = |c − c| = 0 < ε<br>
+trivially holds for every n, i.e., from the index n<sub>0</sub>\_:=\_0
+onwards. Thus, this constant sequence (a<sub>n</sub>) must converge to
+the limit\_c. q.e.d. *)
