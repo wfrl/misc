@@ -417,3 +417,34 @@ Let ε > 0 be arbitrary. The inequality<br>
 trivially holds for every n, i.e., from the index n<sub>0</sub>\_:=\_0
 onwards. Thus, this constant sequence (a<sub>n</sub>) must converge to
 the limit\_c. q.e.d. *)
+
+(*/note converges_mul_const
+This theorem states that a sequence scaled by a constant factor\_r
+[[converges_equi|converges]] to r⋅L if the original one converges
+to\_L.<br>
+<br>
+<b>Proof idea</b><br>
+Scaling the sequence values by the constant factor\_r can be interpreted
+as a benign coordinate transformation of the value space, which of course
+should not change the convergence behavior of the sequence. Accordingly,
+an ε-neighborhood of the scaled sequence corresponds exactly to the
+neighborhood with scaled radius ε/|r| in the original sequence. Since
+we know that it dives in and remains there, this must also be the case
+for the scaled sequence. This line of thought should be reflected in
+the fact that the inequality remains valid under changed perspective,
+even though it takes on a different form.<br>
+<br>
+<b>Proof sketch</b><br>
+Let (a<sub>n</sub>) [[converges_equi|converge]] to L. We need to show
+that (r⋅a<sub>n</sub>) converges to r⋅L.  Case distinction between
+r\_=\_0 and r\_≠\_0. In the case r\_=\_0, (r⋅a<sub>n</sub>) is a constant
+sequence that converges to zero according to [[const_converges]]. Since
+r⋅L\_=\_0, the limit coincides with r⋅L as claimed. We may now assume
+r\_≠\_0. Let ε\_>\_0 be fixed, but arbitrary. Let ε'\_:=\_ε/|r|. Since
+(a<sub>n</sub>) converges, there must exist an n<sub>0</sub> such that
+|a<sub>n</sub>\_−\_L| < ε' for every n\_≥\_n<sub>0</sub>. Since
+|r| >\_0, this inequality can be equivalently transformed to<br>
+\_\_|r⋅a<sub>n</sub> − r⋅L| = |r|⋅|a<sub>n</sub> − L| < ε.<br>
+Thus, for every ε, there exists an index n<sub>0</sub> from which on
+this inequality is satisfied, meaning that (r⋅a<sub>n</sub>) must
+converge to r⋅L. q.e.d. *)

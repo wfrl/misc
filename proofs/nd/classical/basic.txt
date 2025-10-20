@@ -1628,9 +1628,59 @@ a lemma derived from [[incl_equi]]. *)
 (*/note incl_elim Inclusion elimination,
 a lemma derived from [[incl_equi]]. *)
 
-(*/note incl_refl Reflexivity law of [[incl_equi|inclusion]]. *)
-(*/note incl_trans Transitivity law of [[incl_equi|inclusion]]. *)
-(*/note incl_antisym Antisymmetry law of [[incl_equi|inclusion]]. *)
+(*/note incl_refl Reflexivity law of [[incl_equi|inclusion]]. Each
+class is a subclass of itself.<br>
+<br>
+<b>Proof idea</b><br>
+By definition, the statement A\_⊆\_A means that every element of A must
+also be an element of A, which is trivially a factual
+state of affairs.<br>
+<br>
+<b>Proof sketch</b><br>
+If we unfold the definition of inclusion, the statement A\_⊆\_A
+takes the form<br>
+\_\_∀x. x ∈ A → x ∈ A.<br>
+To confirm this, we consider x as a parameter that stands for a fixed
+but arbitrary set. With regard to this, we now have to show x\_∈\_A\_→
+x\_∈\_A. This means that, assuming x\_∈\_A, we have to derive x\_∈\_A,
+which is the assumption itself, so we have already reached our goal.
+q.e.d. *)
+
+(*/note incl_trans Transitivity law of [[incl_equi|inclusion]].
+A subclass of a subclass of some class\_C is also a subclass of\_C.<br>
+<br>
+<b>Proof idea</b><br>
+By definition, the statement A\_⊆\_C means that every element of A must
+also be an element of C. To show this, we consider an arbitrary element
+of A. Since A\_⊆\_B, it is also an element of B. Thus, since
+B\_⊆\_C, it is also an element of C, as claimed.<br>
+<br>
+<b>Proof sketch</b><br>
+Let A ⊆ B and B ⊆ C. We need to show that A ⊆ C, which according to the
+definition unfolds as<br>
+\_\_∀x. x ∈ A → x ∈ C.<br>
+To do this, we consider x as a parameter that stands for a fixed but
+arbitrary set. We now need to show that x\_∈\_C under the additional
+assumption that x\_∈\_A. From A\_⊆\_B and x\_∈\_A, we first obtain
+x\_∈\_B. From B\_⊆\_C and x\_∈\_B, we then obtain x\_∈\_C, which which
+completes the proof. q.e.d. *)
+
+(*/note incl_antisym Antisymmetry law of [[incl_equi|inclusion]]. Two
+classes that are mutually subclasses of each other must be equal. <br>
+<br>
+<b>Proof idea</b><br>
+The equality A = B can be derived by applying the [[ext|extensionality
+axiom]], whose premise is an equivalence that decomposes into two
+implications. However, these implications are nothing other than the
+unfolding of A\_⊆\_B and B\_⊆\_A.<br>
+<br>
+<b>Proof sketch</b><br>
+Let x be fixed, but arbitrary. With A\_⊆\_B, x\_∈\_B follows from
+x\_∈\_A. With B\_⊆\_A, x\_∈\_A follows from x\_∈\_B. Thus, x\_∈\_A is
+equivalent to x\_∈\_B. Because x was arbitrary,<br>
+\_\_∀x. x ∈ A ↔ x ∈ B<br>
+must hold. By the extensionality axiom, we thus arrive at
+A\_=\_B. q.e.d. *)
 
 (*/note comp_intro
 Comprehension introduction, a lemma derived from the axiom of
