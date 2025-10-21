@@ -1682,6 +1682,18 @@ equivalent to x\_∈\_B. Because x was arbitrary,<br>
 must hold. By the extensionality axiom, we thus arrive at
 A\_=\_B. q.e.d. *)
 
+(*/note incl_from_eq
+This theorem states that [[incl_equi|inclusion]] follows from
+equality.<br>
+<br>
+<b>Proof idea</b><br>
+This is essentially just a convoluted form of [[incl_refl]].<br>
+<br>
+<b>Proof sketch</b><br>
+According to [[incl_refl]], A\_⊆\_A holds. Because A\_=\_B, we may
+now substitute B for the A on the right-hand side, which leads to
+A\_⊆\_B. q.e.d *)
+
 (*/note comp_intro
 Comprehension introduction, a lemma derived from the axiom of
 [[comp|class comprehension]]. *)

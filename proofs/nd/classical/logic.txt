@@ -893,6 +893,13 @@ be expressed and derived as a theorem. *)
 intuitionistic logic, which is why it requires [[lem]] as a
 dependency.<br>
 <br>
+<b>Proof idea</b><br>
+Actually, this turns out to be nothing more than the application of the
+[[tollendo_ponens_left|modus tollendo ponens]] to the statement
+A\_∨\_¬A, which must be true according to the
+[[lem|law of excluded middle]]. The proof idea presented there may
+thus be adopted here.<br>
+<br>
 <b>Proof sketch</b><br>
 Let ¬¬A hold. To be shown is A. According to [[lem]], A ∨ ¬A holds
 unconditionally. Proof by cases. In case A, A already holds. Case ¬A
@@ -950,9 +957,26 @@ Let A hold. To be shown is ¬¬A, which means, from the additional
 assumption ¬A, a contradiction must be derived. Now ¬A already
 contradicts A, so we are done. q.e.d. *)
 
-(*/note tollendo_ponens_left Modus tollendo ponens. *)
+(*/note tollendo_ponens_left Modus tollendo ponens.<br>
+<br>
+<b>Proof idea</b><br>
+The statement is so elementary that it should be expedient to blindly
+follow the formalism. We need to derive A from A\_∨\_B and ¬B. With ¬B,
+we don't get anywhere for the time being. So all that remains is to
+resolve A\_∨\_B via case distinction. In case\_A, we are already done.
+Case\_B immediately leads to a contradiction, which, by means of
+[[efq]], gives us every proposition at hand, including\_A.<br>
+<br>
+<b>Proof sketch</b><br>
+Let A ∨ B and ¬B hold. To be shown is A. Case distinction with regard
+to A\_∨\_B. In case A, we are already done. Case B contradicts ¬B. From
+this contradiction, A is obtained via [[efq]]. Thus, A is shown in
+each of the two cases. q.e.d. *)
 
-(*/note tollendo_ponens_right Modus tollendo ponens. *)
+(*/note tollendo_ponens_right Modus tollendo ponens.<br>
+<br>
+<b>Proof idea/sketch</b><br>
+See [[tollendo_ponens_left]]. *)
 
 (*/note eq_subst_rev This variant of [[eq_subst]] allows the omission
 of [[eq_symm]], which improves ergonomics. *)

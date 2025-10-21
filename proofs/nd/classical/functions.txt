@@ -1779,6 +1779,11 @@ form, the [[substitution|axiom of substitution]]. The premise
 A\_⊆\_dom\_f is actually not needed, as shown in
 [[replacement_strong]].<br>
 <br>
+<b>Proof idea</b><br>
+This statement is almost the same as the axiom of substitution, except
+that the latter applies to the entire domain. However, that situation
+can easily be established by considering the restriction of\_f to\_A.<br>
+<br>
 <b>Proof sketch</b><br>
 Consider the [[restr_eq|restriction]] f|<sub>A</sub>, which has
 [[dom_eq|domain]]\_A because A\_⊆\_dom\_f. Thus, according to the
@@ -1789,6 +1794,9 @@ well, since f[A]\_⊆\_rng(f|<sub>A</sub>). q.e.d. *)
 
 (*/note replacement_strong
 A stronger form of the [[replacement|replacement axiom]].<br>
+<br>
+<b>Proof idea</b><br>
+The proof proceeds almost the same way as in [[replacement]].<br>
 <br>
 <b>Proof sketch</b><br>
 Consider the [[restr_eq|restriction]] f|<sub>A</sub>, which has
