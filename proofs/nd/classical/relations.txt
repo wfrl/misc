@@ -235,6 +235,18 @@ dom_union. ⊢ dom (R ∪ Q) = dom R ∪ dom Q, ext 31.
 31. ⊢ ∀y. y ∈ rng (R ∪ Q) ↔ y ∈ rng R ∪ rng Q, uq_intro 30.
 rng_union. ⊢ rng (R ∪ Q) = rng R ∪ rng Q, ext 31.
 
+01. 1 ⊢ R ⊆ X1 × Y1, hypo.
+02. 2 ⊢ S ⊆ X2 × Y2, hypo.
+03. 3 ⊢ X1 ∩ X2 = ∅, hypo.
+04. 3 ⊢ (X1 × Y1) ∩ (X2 × Y2) = ∅, prod_disjointl 3.
+05. 1, 2 ⊢ R ∩ S ⊆ (X1 × Y1) ∩ (X2 × Y2),
+  intersection_incl_in_intersection 1 2.
+06. 1, 2, 3 ⊢ R ∩ S ⊆ ∅, incl_eq_trans 5 4.
+07. ⊢ ∅ ⊆ R ∩ S, empty_set_is_least.
+08. 1, 2, 3 ⊢ R ∩ S = ∅, incl_antisym 6 7.
+relation_disjointl. ⊢ R ⊆ X1 × Y1 → S ⊆ X2 × Y2 →
+  X1 ∩ X2 = ∅ → R ∩ S = ∅, subj_intro_iii 8.
+
 
 (*/section Images and inverse images *)
 
@@ -651,6 +663,96 @@ img_composition. ⊢ img (S ∘ R) A = img S (img R A), ext 30.
 29. ⊢ x ∈ inv_img (S ∘ R) B ↔ x ∈ inv_img R (inv_img S B), bij_intro 14 28.
 30. ⊢ ∀x. x ∈ inv_img (S ∘ R) B ↔ x ∈ inv_img R (inv_img S B), uq_intro 29.
 inv_img_composition. ⊢ inv_img (S ∘ R) B = inv_img R (inv_img S B), ext 30.
+
+
+(*/section Inverse relations *)
+
+01. 1 ⊢ t ∈ inv R, hypo.
+02. 1 ⊢ t ∈ {t | ∃x. ∃y. t = (y, x) ∧ (x, y) ∈ R},
+  eq_subst inv_eq 1, P A ↔ t ∈ A.
+03. 1 ⊢ ∃x. ∃y. t = (y, x) ∧ (x, y) ∈ R, comp_elim 2.
+04. 4 ⊢ ∃y. t = (y, x) ∧ (x, y) ∈ R, hypo.
+05. 5 ⊢ t = (y, x) ∧ (x, y) ∈ R, hypo.
+06. 5 ⊢ t = (y, x), conj_eliml 5.
+07. 5 ⊢ ∃b. t = (y, b), ex_intro 6.
+08. 5 ⊢ ∃a. ∃b. t = (a, b), ex_intro 7.
+09. 4 ⊢ ∃a. ∃b. t = (a, b), ex_elim 4 8.
+10. 1 ⊢ ∃a. ∃b. t = (a, b), ex_elim 3 9.
+11. ⊢ t ∈ inv R → ∃a. ∃b. t = (a, b), subj_intro 10.
+12. ⊢ ∀t. t ∈ inv R → ∃a. ∃b. t = (a, b), uq_intro 11.
+inv_is_relation. ⊢ relation (inv R), relation_fold 12.
+
+01. 1 ⊢ (x, y) ∈ R, hypo.
+02. ⊢ (y, x) = (y, x), eq_refl.
+03. 1 ⊢ (y, x) = (y, x) ∧ (x, y) ∈ R, conj_intro 2 1.
+04. 1 ⊢ ∃b. (y, x) = (b, x) ∧ (x, b) ∈ R, ex_intro 3.
+05. 1 ⊢ ∃a. ∃b. (y, x) = (b, a) ∧ (a, b) ∈ R, ex_intro 4.
+06. 1 ⊢ set (x, y), set_intro 1.
+07. 1 ⊢ set x, setl_from_pair 6.
+08. 1 ⊢ set y, setr_from_pair 6.
+09. 1 ⊢ set (y, x), set_pair 8 7.
+10. 1 ⊢ (y, x) ∈ {t | ∃a. ∃b. t = (b, a) ∧ (a, b) ∈ R},
+  comp_intro 9 5, P t ↔ (∃a. ∃b. t = (b, a) ∧ (a, b) ∈ R).
+11. 1 ⊢ (y, x) ∈ inv R,
+  eq_subst_rev inv_eq 10, P A ↔ (y, x) ∈ A.
+inv_intro. ⊢ (x, y) ∈ R → (y, x) ∈ inv R, subj_intro 11.
+
+01. 1 ⊢ (y, x) ∈ inv R, hypo.
+02. 1 ⊢ (y, x) ∈ {t | ∃a. ∃b. t = (b, a) ∧ (a, b) ∈ R},
+  eq_subst inv_eq 1, P A ↔ (y, x) ∈ A.
+03. 1 ⊢ ∃a. ∃b. (y, x) = (b, a) ∧ (a, b) ∈ R, comp_elim 2.
+04. 4 ⊢ ∃b. (y, x) = (b, a) ∧ (a, b) ∈ R, hypo.
+05. 5 ⊢ (y, x) = (b, a) ∧ (a, b) ∈ R, hypo.
+06. 5 ⊢ (a, b) ∈ R, conj_elimr 5.
+07. 5 ⊢ set (a, b), set_intro 6.
+08. 5 ⊢ set a, setl_from_pair 7.
+09. 5 ⊢ set b, setr_from_pair 7.
+10. 5 ⊢ (y, x) = (b, a), conj_eliml 5.
+11. 5 ⊢ (b, a) = (y, x), eq_symm 10.
+12. 5 ⊢ b = y ∧ a = x, pair_property 9 8 11.
+13. 5 ⊢ b = y, conj_eliml 12.
+14. 5 ⊢ a = x, conj_elimr 12.
+15. 5 ⊢ (x, b) ∈ R, eq_subst 14 6.
+16. 5 ⊢ (x, y) ∈ R, eq_subst 13 15.
+17. 4 ⊢ (x, y) ∈ R, ex_elim 4 16.
+18. 1 ⊢ (x, y) ∈ R, ex_elim 3 17.
+inv_elim. ⊢ (y, x) ∈ inv R → (x, y) ∈ R, subj_intro 18.
+
+01. 1 ⊢ y ∈ dom (inv R), hypo.
+02. 1 ⊢ ∃x. (y, x) ∈ inv R, dom_elim 1.
+03. 3 ⊢ (y, x) ∈ inv R, hypo.
+04. 3 ⊢ (x, y) ∈ R, inv_elim 3.
+05. 3 ⊢ y ∈ rng R, rng_intro 4.
+06. 1 ⊢ y ∈ rng R, ex_elim 2 5.
+07. ⊢ y ∈ dom (inv R) → y ∈ rng R, subj_intro 6.
+08. 8 ⊢ y ∈ rng R, hypo.
+09. 8 ⊢ ∃x. (x, y) ∈ R, rng_elim 8.
+10. 10 ⊢ (x, y) ∈ R, hypo.
+11. 10 ⊢ (y, x) ∈ inv R, inv_intro 10.
+12. 10 ⊢ y ∈ dom (inv R), dom_intro 11.
+13. 8 ⊢ y ∈ dom (inv R), ex_elim 9 12.
+14. ⊢ y ∈ rng R → y ∈ dom (inv R), subj_intro 13.
+15. ⊢ y ∈ dom (inv R) ↔ y ∈ rng R, bij_intro 7 14.
+16. ⊢ ∀y. y ∈ dom (inv R) ↔ y ∈ rng R, uq_intro 15.
+dom_inv. ⊢ dom (inv R) = rng R, ext 16.
+
+01. 1 ⊢ x ∈ rng (inv R), hypo.
+02. 1 ⊢ ∃y. (y, x) ∈ inv R, rng_elim 1.
+03. 3 ⊢ (y, x) ∈ inv R, hypo.
+04. 3 ⊢ (x, y) ∈ R, inv_elim 3.
+05. 3 ⊢ x ∈ dom R, dom_intro 4.
+06. 1 ⊢ x ∈ dom R, ex_elim 2 5.
+07. ⊢ x ∈ rng (inv R) → x ∈ dom R, subj_intro 6.
+08. 8 ⊢ x ∈ dom R, hypo.
+09. 8 ⊢ ∃y. (x, y) ∈ R, dom_elim 8.
+10. 10 ⊢ (x, y) ∈ R, hypo.
+11. 10 ⊢ (y, x) ∈ inv R, inv_intro 10.
+12. 10 ⊢ x ∈ rng (inv R), rng_intro 11.
+13. 8 ⊢ x ∈ rng (inv R), ex_elim 9 12.
+14. ⊢ x ∈ dom R → x ∈ rng (inv R), subj_intro 13.
+15. ⊢ x ∈ rng (inv R) ↔ x ∈ dom R, bij_intro 7 14.
+16. ⊢ ∀x. x ∈ rng (inv R) ↔ x ∈ dom R, uq_intro 15.
+rng_inv. ⊢ rng (inv R) = dom R, ext 16.
 
 
 (*/section Special relations *)

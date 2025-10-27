@@ -75,6 +75,14 @@ map_dom. ⊢ map f X Y → dom f = X, subj_intro 3.
 03. 1 ⊢ rng f ⊆ Y, conj_elimr 2.
 map_rng. ⊢ map f X Y → rng f ⊆ Y, subj_intro 3.
 
+01. 1 ⊢ map f X Y, hypo.
+02. 2 ⊢ rng f ⊆ B, hypo.
+03. 1 ⊢ function f, map_is_function 1.
+04. 1 ⊢ dom f = X, map_dom 1.
+05. 1, 2 ⊢ map f X B, map_intro 3 4 2.
+rng_restr_is_map. ⊢ map f X Y → rng f ⊆ B →
+  map f X B, subj_intro_ii 5.
+
 01. 1 ⊢ f ⊆ g, hypo.
 02. 2 ⊢ function g, hypo.
 03. 2 ⊢ relation g, fn_is_rel 2.
@@ -550,6 +558,28 @@ map_app_in_cod. ⊢ map f X Y → x ∈ X → app f x ∈ Y, subj_intro_ii 9.
 04. 1, 2 ⊢ set (app f x), set_intro 3.
 map_app_is_set. ⊢ map f X Y → x ∈ X → set (app f x), subj_intro_ii 4.
 
+01. 1 ⊢ map f X1 Y, hypo.
+02. 2 ⊢ map (f ∪ g) (X1 ∪ X2) Z, hypo.
+03. 3 ⊢ x ∈ X1, hypo.
+04. ⊢ app f x = app f x, eq_refl.
+05. 1, 3 ⊢ (x, app f x) ∈ f, map_app_elim 1 3 4.
+06. 1, 3 ⊢ (x, app f x) ∈ f ∪ g, union_introl 5.
+07. 1, 2, 3 ⊢ app f x = app (f ∪ g) x, map_app_intro 2 6.
+08. 1, 2, 3 ⊢ app (f ∪ g) x = app f x, eq_symm 7.
+map_app_unionl. ⊢ map f X1 Y → map (f ∪ g) (X1 ∪ X2) Z →
+  x ∈ X1 → app (f ∪ g) x = app f x, subj_intro_iii 8.
+
+01. 1 ⊢ map g X2 Y, hypo.
+02. 2 ⊢ map (f ∪ g) (X1 ∪ X2) Z, hypo.
+03. 3 ⊢ x ∈ X2, hypo.
+04. ⊢ app g x = app g x, eq_refl.
+05. 1, 3 ⊢ (x, app g x) ∈ g, map_app_elim 1 3 4.
+06. 1, 3 ⊢ (x, app g x) ∈ f ∪ g, union_intror 5.
+07. 1, 2, 3 ⊢ app g x = app (f ∪ g) x, map_app_intro 2 6.
+08. 1, 2, 3 ⊢ app (f ∪ g) x = app g x, eq_symm 7.
+map_app_unionr. ⊢ map g X2 Y → map (f ∪ g) (X1 ∪ X2) Z →
+  x ∈ X2 → app (f ∪ g) x = app g x, subj_intro_iii 8.
+
 
 (*/section Function composition *)
 
@@ -986,8 +1016,30 @@ fn_inv_img_dist_inter. ⊢ function f →
 07. 3 ⊢ y ∈ img (restr f A) A, img_intro 4 6.
 08. 1 ⊢ y ∈ img (restr f A) A, ex_elim 2 7.
 09. ⊢ y ∈ img f A → y ∈ img (restr f A) A, subj_intro 8.
-10. ⊢ ∀y. y ∈ img f A → y ∈ img (restr f A) A, uq_intro 9.
-restr_img_self. ⊢ img f A ⊆ img (restr f A) A, incl_intro 10.
+10. 10 ⊢ y ∈ img (restr f A) A, hypo.
+11. 10 ⊢ ∃x. x ∈ A ∧ (x, y) ∈ restr f A, img_elim 10.
+12. 12 ⊢ x ∈ A ∧ (x, y) ∈ restr f A, hypo.
+13. 12 ⊢ x ∈ A, conj_eliml 12.
+14. 12 ⊢ (x, y) ∈ restr f A, conj_elimr 12.
+15. ⊢ restr f A = f ∩ (A × UnivCl), restr_eq.
+16. 12 ⊢ (x, y) ∈ f ∩ (A × UnivCl),
+  eq_subst 15 14, P t ↔ (x, y) ∈ t.
+17. 12 ⊢ (x, y) ∈ f, intersection_eliml 16.
+18. 12 ⊢ y ∈ img f A, img_intro 13 17.
+19. 10 ⊢ y ∈ img f A, ex_elim 11 18.
+20. ⊢ y ∈ img (restr f A) A → y ∈ img f A, subj_intro 19.
+21. ⊢ y ∈ img f A ↔ y ∈ img (restr f A) A, bij_intro 9 20.
+22. ⊢ ∀y. y ∈ img f A ↔ y ∈ img (restr f A) A, uq_intro 21.
+restr_img_self. ⊢ img f A = img (restr f A) A, ext 22.
+
+01. 1 ⊢ map f X1 Y1, hypo.
+02. 2 ⊢ map g X2 Y2, hypo.
+03. 3 ⊢ X1 ∩ X2 = ∅, hypo.
+04. 1 ⊢ f ⊆ X1 × Y1, map_incl_in_prod 1.
+05. 2 ⊢ g ⊆ X2 × Y2, map_incl_in_prod 2.
+06. 1, 2, 3 ⊢ f ∩ g = ∅, relation_disjointl 4 5 3.
+map_disjoint_dom. ⊢ map f X1 Y1 → map g X2 Y2 →
+  X1 ∩ X2 = ∅ → f ∩ g = ∅, subj_intro_iii 6.
 
 01. 1 ⊢ function f, hypo.
 02. 2 ⊢ A ⊆ dom f, hypo.
@@ -1001,8 +1053,8 @@ restr_img_self. ⊢ img f A ⊆ img (restr f A) A, incl_intro 10.
 10. 2, 3 ⊢ set (dom (restr f A)), eq_subst_rev 9 3, P t ↔ set t.
 11. 1, 2, 3 ⊢ set (rng (restr f A)), substitution 4 10.
 12. ⊢ img (restr f A) A ⊆ rng (restr f A), img_incl_in_rng.
-13. ⊢ img f A ⊆ img (restr f A) A, restr_img_self.
-14. ⊢ img f A ⊆ rng (restr f A), incl_trans 13 12.
+13. ⊢ img f A = img (restr f A) A, restr_img_self.
+14. ⊢ img f A ⊆ rng (restr f A), eq_incl_trans 13 12.
 15. 1, 2, 3 ⊢ set (img f A), subset 14 11.
 replacement. ⊢ function f → A ⊆ dom f → set A → set (img f A),
   subj_intro_iii 15.
@@ -1016,8 +1068,8 @@ replacement. ⊢ function f → A ⊆ dom f → set A → set (img f A),
 07. 2 ⊢ set (dom (restr f A)), eq_subst_rev 4 6, P t ↔ set t.
 08. 1, 2 ⊢ set (rng (restr f A)), substitution 3 7.
 09. ⊢ img (restr f A) A ⊆ rng (restr f A), img_incl_in_rng.
-10. ⊢ img f A ⊆ img (restr f A) A, restr_img_self.
-11. ⊢ img f A ⊆ rng (restr f A), incl_trans 10 9.
+10. ⊢ img f A = img (restr f A) A, restr_img_self.
+11. ⊢ img f A ⊆ rng (restr f A), eq_incl_trans 10 9.
 12. 1, 2 ⊢ set (img f A), subset 11 8.
 replacement_strong. ⊢ function f → set A → set (img f A),
   subj_intro_ii 12.
@@ -1556,6 +1608,245 @@ composition_bij_bij_is_bij. ⊢ bij f X Y → bij g Y Z →
 26. 1, 2 ⊢ inj f X Y, ex_elim 2 25.
 inj_from_left_inv. ⊢ map f X Y → (∃g. map g Y X ∧ g ∘ f = id X) →
   inj f X Y, subj_intro_ii 26.
+
+01. 1 ⊢ inj f X1 Y1, hypo.
+02. 2 ⊢ inj g X2 Y2, hypo.
+03. 3 ⊢ X1 ∩ X2 = ∅, hypo.
+04. 4 ⊢ Y1 ∩ Y2 = ∅, hypo.
+05. 1 ⊢ map f X1 Y1, inj_is_map 1.
+06. 2 ⊢ map g X2 Y2, inj_is_map 2.
+07. 1, 2, 3 ⊢ map (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2), map_union 5 6 3.
+08. 8 ⊢ a ∈ X1 ∪ X2, hypo.
+09. 9 ⊢ b ∈ X1 ∪ X2, hypo.
+10. 10 ⊢ app (f ∪ g) a = app (f ∪ g) b, hypo.
+11. 8 ⊢ a ∈ X1 ∨ a ∈ X2, union_elim 8.
+12. 9 ⊢ b ∈ X1 ∨ b ∈ X2, union_elim 9.
+13. 13 ⊢ a ∈ X1, hypo.
+14. 14 ⊢ b ∈ X1, hypo.
+15. 1, 2, 3, 13 ⊢ app (f ∪ g) a = app f a, map_app_unionl 5 7 13.
+16. 1, 2, 3, 14 ⊢ app (f ∪ g) b = app f b, map_app_unionl 5 7 14.
+17. 1, 2, 3, 10, 13 ⊢ app f a = app (f ∪ g) b, eq_trans_ll 15 10.
+18. 1, 2, 3, 10, 13, 14 ⊢ app f a = app f b, eq_trans 17 16.
+19. 1, 2, 3, 10, 13, 14 ⊢ a = b, inj_elim 1 13 14 18.
+20. 20 ⊢ b ∈ X2, hypo.
+21. 1, 2, 3, 20 ⊢ app (f ∪ g) b = app g b, map_app_unionr 6 7 20.
+22. 1, 2, 3, 10, 13, 20 ⊢ app f a = app g b, eq_trans 17 21.
+23. 1, 13 ⊢ app f a ∈ Y1, map_app_in_cod 5 13.
+24. 2, 20 ⊢ app g b ∈ Y2, map_app_in_cod 6 20.
+25. 1, 2, 3, 10, 13, 20 ⊢ app f a ∈ Y2,
+  eq_subst_rev 22 24, P t ↔ t ∈ Y2.
+26. 1, 2, 3, 4, 10, 13, 20 ⊢ ⊥, disjoint_property 4 23 25.
+27. 1, 2, 3, 4, 10, 13, 20 ⊢ a = b, efq 26.
+28. 1, 2, 3, 4, 9, 10, 13 ⊢ a = b, disj_elim 12 19 27.
+29. 29 ⊢ a ∈ X2, hypo.
+30. 30 ⊢ b ∈ X1, hypo.
+31. 1, 2, 3, 29 ⊢ app (f ∪ g) a = app g a, map_app_unionr 6 7 29.
+32. 1, 2, 3, 30 ⊢ app (f ∪ g) b = app f b, map_app_unionl 5 7 30.
+33. 1, 2, 3, 10, 30 ⊢ app (f ∪ g) a = app f b, eq_trans 10 32.
+34. 1, 2, 3, 10, 29, 30 ⊢ app f b = app g a, eq_trans_ll 33 31.
+35. 1, 30 ⊢ app f b ∈ Y1, map_app_in_cod 5 30.
+36. 2, 29 ⊢ app g a ∈ Y2, map_app_in_cod 6 29.
+37. 1, 2, 3, 10, 29, 30 ⊢ app f b ∈ Y2,
+  eq_subst_rev 34 36, P t ↔ t ∈ Y2.
+38. 1, 2, 3, 4, 10, 29, 30 ⊢ ⊥, disjoint_property 4 35 37.
+39. 1, 2, 3, 4, 10, 29, 30 ⊢ a = b, efq 38.
+40. 40 ⊢ b ∈ X2, hypo.
+41. 1, 2, 3, 40 ⊢ app (f ∪ g) b = app g b, map_app_unionr 6 7 40.
+42. 1, 2, 3, 10, 29 ⊢ app g a = app (f ∪ g) b, eq_trans_ll 31 10.
+43. 1, 2, 3, 10, 29, 40 ⊢ app g a = app g b, eq_trans 42 41.
+44. 1, 2, 3, 10, 29, 40 ⊢ a = b, inj_elim 2 29 40 43.
+45. 1, 2, 3, 4, 9, 10, 29 ⊢ a = b, disj_elim 12 39 44.
+46. 1, 2, 3, 4, 8, 9, 10 ⊢ a = b, disj_elim 11 28 45.
+47. 1, 2, 3, 4 ⊢ a ∈ X1 ∪ X2 → b ∈ X1 ∪ X2 →
+  app (f ∪ g) a = app (f ∪ g) b → a = b, subj_intro_iii 46.
+48. 1, 2, 3, 4 ⊢ ∀b. a ∈ X1 ∪ X2 → b ∈ X1 ∪ X2 →
+  app (f ∪ g) a = app (f ∪ g) b → a = b, uq_intro 47.
+49. 1, 2, 3, 4 ⊢ ∀a. ∀b. a ∈ X1 ∪ X2 → b ∈ X1 ∪ X2 →
+  app (f ∪ g) a = app (f ∪ g) b → a = b, uq_intro 48.
+50. 1, 2, 3, 4 ⊢ inj (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2), inj_intro 7 49.
+inj_union. ⊢ inj f X1 Y1 → inj g X2 Y2 → X1 ∩ X2 = ∅ → Y1 ∩ Y2 = ∅ →
+  inj (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2), subj_intro_iv 50.
+
+01. 1 ⊢ sur f X1 Y1, hypo.
+02. 2 ⊢ sur g X2 Y2, hypo.
+03. 3 ⊢ X1 ∩ X2 = ∅, hypo.
+04. 1 ⊢ map f X1 Y1, sur_is_map 1.
+05. 2 ⊢ map g X2 Y2, sur_is_map 2.
+06. 1, 2, 3 ⊢ map (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2),
+  map_union 4 5 3.
+07. ⊢ rng (f ∪ g) = rng f ∪ rng g, rng_union.
+08. 1 ⊢ rng f = Y1, sur_elim 1.
+09. 2 ⊢ rng g = Y2, sur_elim 2.
+10. 1, 2 ⊢ rng f ∪ rng g = Y1 ∪ Y2,
+  eq_cong_ii 8 9, f x y = x ∪ y.
+11. 1, 2 ⊢ rng (f ∪ g) = Y1 ∪ Y2, eq_trans 7 10.
+12. 1, 2 ⊢ Y1 ∪ Y2 ⊆ rng (f ∪ g), incl_from_eq_rev 11.
+13. 1, 2, 3 ⊢ sur (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2), sur_intro 6 12.
+sur_union. ⊢ sur f X1 Y1 → sur g X2 Y2 →
+  X1 ∩ X2 = ∅ → sur (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2),
+  subj_intro_iii 13.
+
+01. 1 ⊢ bij f X1 Y1, hypo.
+02. 2 ⊢ bij g X2 Y2, hypo.
+03. 3 ⊢ X1 ∩ X2 = ∅, hypo.
+04. 4 ⊢ Y1 ∩ Y2 = ∅, hypo.
+05. 1 ⊢ inj f X1 Y1, bij_is_inj 1.
+06. 2 ⊢ inj g X2 Y2, bij_is_inj 2.
+07. 1 ⊢ sur f X1 Y1, bij_is_sur 1.
+08. 2 ⊢ sur g X2 Y2, bij_is_sur 2.
+09. 1, 2, 3, 4 ⊢ inj (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2),
+  inj_union 5 6 3 4.
+10. 1, 2, 3 ⊢ sur (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2),
+  sur_union 7 8 3.
+11. 1, 2, 3, 4 ⊢ bij (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2),
+  bij_from_inj_sur 9 10.
+bij_union. ⊢ bij f X1 Y1 → bij g X2 Y2 → X1 ∩ X2 = ∅ →
+  Y1 ∩ Y2 = ∅ → bij (f ∪ g) (X1 ∪ X2) (Y1 ∪ Y2),
+  subj_intro_iv 11.
+
+01. 1 ⊢ inj f X Y, hypo.
+02. 2 ⊢ A ⊆ X, hypo.
+03. 1 ⊢ map f X Y, inj_is_map 1.
+04. 1, 2 ⊢ map (restr f A) A Y, map_restr 3 2.
+05. 5 ⊢ a ∈ A, hypo.
+06. 6 ⊢ b ∈ A, hypo.
+07. 7 ⊢ app (restr f A) a = app (restr f A) b, hypo.
+08. 1, 2, 5 ⊢ app f a = app (restr f A) a, app_restr 3 2 5.
+09. 1, 2, 6 ⊢ app f b = app (restr f A) b, app_restr 3 2 6.
+10. 1, 2, 5, 7 ⊢ app f a = app (restr f A) b, eq_trans 8 7.
+11. 1, 2, 5, 6, 7 ⊢ app f a = app f b, eq_trans_rr 10 9.
+12. 2, 5 ⊢ a ∈ X, incl_elim 2 5.
+13. 2, 6 ⊢ b ∈ X, incl_elim 2 6.
+14. 1, 2, 5, 6, 7 ⊢ a = b, inj_elim 1 12 13 11.
+15. 1, 2 ⊢ a ∈ A → b ∈ A →
+  app (restr f A) a = app (restr f A) b → a = b,
+  subj_intro_iii 14.
+16. 1, 2 ⊢ ∀b. a ∈ A → b ∈ A →
+  app (restr f A) a = app (restr f A) b → a = b,
+  uq_intro 15.
+17. 1, 2 ⊢ ∀a. ∀b. a ∈ A → b ∈ A →
+  app (restr f A) a = app (restr f A) b → a = b,
+  uq_intro 16.
+18. 1, 2 ⊢ inj (restr f A) A Y, inj_intro 4 17.
+restr_is_inj. ⊢ inj f X Y → A ⊆ X →
+  inj (restr f A) A Y, subj_intro_ii 18.
+
+01. 1 ⊢ bij f X Y, hypo.
+02. 1 ⊢ map f X Y, bij_is_map 1.
+03. 1 ⊢ f ⊆ X × Y, map_incl_in_prod 2.
+04. ⊢ relation (inv f), inv_is_relation.
+
+05. 5 ⊢ (y, x1) ∈ inv f, hypo.
+06. 6 ⊢ (y, x2) ∈ inv f, hypo.
+07. 5 ⊢ (x1, y) ∈ f, inv_elim 5.
+08. 6 ⊢ (x2, y) ∈ f, inv_elim 6.
+09. 1, 5 ⊢ (x1, y) ∈ X × Y, incl_elim 3 7.
+10. 1, 6 ⊢ (x2, y) ∈ X × Y, incl_elim 3 8.
+11. 1, 5 ⊢ x1 ∈ X ∧ y ∈ Y, prod_elim_pair 9.
+12. 1, 6 ⊢ x2 ∈ X ∧ y ∈ Y, prod_elim_pair 10.
+13. 1, 5 ⊢ x1 ∈ X, conj_eliml 11.
+14. 1, 6 ⊢ x2 ∈ X, conj_eliml 12.
+15. 1, 5 ⊢ y = app f x1, map_app_intro 2 7.
+16. 1, 6 ⊢ y = app f x2, map_app_intro 2 8.
+17. 1, 5, 6 ⊢ app f x1 = app f x2, eq_trans_ll 15 16.
+18. 1 ⊢ inj f X Y, bij_is_inj 1.
+19. 1, 5, 6 ⊢ x1 = x2, inj_elim 18 13 14 17.
+20. 1 ⊢ (y, x1) ∈ inv f →
+  (y, x2) ∈ inv f → x1 = x2, subj_intro_ii 19.
+21. 1 ⊢ ∀x2. (y, x1) ∈ inv f →
+  (y, x2) ∈ inv f → x1 = x2, uq_intro 20.
+22. 1 ⊢ ∀x1. ∀x2. (y, x1) ∈ inv f →
+  (y, x2) ∈ inv f → x1 = x2, uq_intro 21.
+23. 1 ⊢ ∀y. ∀x1. ∀x2. (y, x1) ∈ inv f →
+  (y, x2) ∈ inv f → x1 = x2, uq_intro 22.
+24. 1 ⊢ function (inv f), function_intro 4 23.
+
+25. ⊢ dom (inv f) = rng f, dom_inv.
+26. 1 ⊢ sur f X Y, bij_is_sur 1.
+27. 1 ⊢ rng f = Y, sur_elim 26.
+28. 1 ⊢ dom (inv f) = Y, eq_trans 25 27.
+
+29. ⊢ rng (inv f) = dom f, rng_inv.
+30. 1 ⊢ dom f = X, map_dom 2.
+31. 1 ⊢ rng (inv f) = X, eq_trans 29 30.
+32. 1 ⊢ rng (inv f) ⊆ X, incl_from_eq 31.
+
+33. 1 ⊢ map (inv f) Y X, map_intro 24 28 32.
+inv_of_bij_is_map. ⊢ bij f X Y → map (inv f) Y X,
+  subj_intro 33.
+
+01. 1 ⊢ bij f X Y, hypo.
+02. 2 ⊢ x ∈ X, hypo.
+03. 1 ⊢ map f X Y, bij_is_map 1.
+04. 1 ⊢ map (inv f) Y X, inv_of_bij_is_map 1.
+05. ⊢ app f x = app f x, eq_refl.
+06. 1, 2 ⊢ (x, app f x) ∈ f, map_app_elim 3 2 5.
+07. 1, 2 ⊢ (app f x, x) ∈ inv f, inv_intro 6.
+08. 1, 2 ⊢ x = app (inv f) (app f x), map_app_intro 4 7.
+09. 1, 2 ⊢ app (inv f) (app f x) = x, eq_symm 8.
+bij_app_inv_app. ⊢ bij f X Y → x ∈ X →
+  app (inv f) (app f x) = x, subj_intro_ii 9.
+
+01. 1 ⊢ bij f X Y, hypo.
+02. 2 ⊢ y ∈ Y, hypo.
+03. 1 ⊢ map f X Y, bij_is_map 1.
+04. 1 ⊢ map (inv f) Y X, inv_of_bij_is_map 1.
+05. ⊢ app (inv f) y = app (inv f) y, eq_refl.
+06. 1, 2 ⊢ (y, app (inv f) y) ∈ inv f, map_app_elim 4 2 5.
+07. 1, 2 ⊢ (app (inv f) y, y) ∈ f, inv_elim 6.
+08. 1, 2 ⊢ y = app f (app (inv f) y), map_app_intro 3 7.
+09. 1, 2 ⊢ app f (app (inv f) y) = y, eq_symm 8.
+bij_app_app_inv. ⊢ bij f X Y → y ∈ Y →
+  app f (app (inv f) y) = y, subj_intro_ii 9.
+
+01. 1 ⊢ bij f X Y, hypo.
+02. 1 ⊢ map f X Y, bij_is_map 1.
+03. 1 ⊢ map (inv f) Y X, inv_of_bij_is_map 1.
+04. ⊢ rng (inv f) = dom f, rng_inv.
+05. 1 ⊢ dom f = X, map_dom 2.
+06. 1 ⊢ rng (inv f) = X, eq_trans 4 5.
+07. 1 ⊢ X ⊆ rng (inv f), incl_from_eq_rev 6.
+08. 1 ⊢ sur (inv f) Y X, sur_intro 3 7.
+09. 9 ⊢ a ∈ Y, hypo.
+10. 10 ⊢ b ∈ Y, hypo.
+11. 11 ⊢ app (inv f) a = app (inv f) b, hypo.
+12. ⊢ x = y → g x = g y, eq_cong.
+13. 11 ⊢ app f (app (inv f) a) = app f (app (inv f) b),
+  12 11, g t = app f t.
+14. 1, 9 ⊢ app f (app (inv f) a) = a, bij_app_app_inv 1 9.
+15. 1, 10 ⊢ app f (app (inv f) b) = b, bij_app_app_inv 1 10.
+16. 1, 9, 11 ⊢ a = app f (app (inv f) b), eq_trans_ll 14 13.
+17. 1, 9, 10, 11 ⊢ a = b, eq_trans 16 15.
+18. 1 ⊢ a ∈ Y → b ∈ Y →
+  app (inv f) a = app (inv f) b → a = b, subj_intro_iii 17.
+19. 1 ⊢ ∀b. a ∈ Y → b ∈ Y →
+  app (inv f) a = app (inv f) b → a = b, uq_intro 18.
+20. 1 ⊢ ∀a. ∀b. a ∈ Y → b ∈ Y →
+  app (inv f) a = app (inv f) b → a = b, uq_intro 19.
+21. 1 ⊢ inj (inv f) Y X, inj_intro 3 20.
+22. 1 ⊢ bij (inv f) Y X, bij_from_inj_sur 21 8.
+inv_of_bij_is_bij. ⊢ bij f X Y → bij (inv f) Y X,
+  subj_intro 22.
+
+01. 1 ⊢ map f X Y, hypo.
+02. 2 ⊢ rng f = B, hypo.
+03. 2 ⊢ rng f ⊆ B, incl_from_eq 2.
+04. 1, 2 ⊢ map f X B, rng_restr_is_map 1 3.
+05. 2 ⊢ B ⊆ rng f, incl_from_eq_rev 2.
+06. 1, 2 ⊢ sur f X B, sur_intro 4 5.
+rng_restr_is_sur. ⊢ map f X Y → rng f = B →
+  sur f X B, subj_intro_ii 6.
+
+01. 1 ⊢ inj f X Y, hypo.
+02. 2 ⊢ rng f ⊆ B, hypo.
+03. 1 ⊢ map f X Y, inj_is_map 1.
+04. 1, 2 ⊢ map f X B,  rng_restr_is_map 3 2.
+05. 1 ⊢ ∀a. ∀b. a ∈ X → b ∈ X → app f a = app f b → a = b,
+  lsubj_conj_elimr inj_equi 1.
+06. 1, 2 ⊢ inj f X B, inj_intro 4 5.
+rng_restr_is_inj. ⊢ inj f X Y → rng f ⊆ B → inj f X B,
+  subj_intro_ii 6.
+
 
 (*/section Choice functions *)
 

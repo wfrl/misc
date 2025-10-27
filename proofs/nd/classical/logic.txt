@@ -65,6 +65,26 @@ efq_from_dne. ⊢ (¬¬A → A) → (⊥ → A), subj_intro_ii 6.
 08. ⊢ ¬¬(A ∨ ¬A), neg_intro 7.
 lem_from_dne. ⊢ A ∨ ¬A, dne 8.
 
+01. 1 ⊢ A ∧ ¬A → B, hypo.
+02. 2 ⊢ A ∨ B, hypo.
+03. 3 ⊢ ¬A, hypo.
+04. 4 ⊢ A, hypo.
+05. 3, 4 ⊢ A ∧ ¬A, conj_intro 4 3.
+06. 1, 3, 4 ⊢ B, subj_elim 1 5.
+07. 7 ⊢ B, hypo.
+08. 1, 2, 3 ⊢ B, disj_elim 2 6 7.
+09. ⊢ (A ∧ ¬A → B) → (A ∨ B → ¬A → B), subj_intro_iii 8.
+10. 10 ⊢ A ∨ B → ¬A → B, hypo.
+11. 11 ⊢ A ∧ ¬A, hypo.
+12. 11 ⊢ A, conj_eliml 11.
+13. 11 ⊢ ¬A, conj_elimr 11.
+14. 11 ⊢ A ∨ B, disj_introl 12.
+15. 10, 11 ⊢ ¬A → B, subj_elim 10 14.
+16. 10, 11 ⊢ B, subj_elim 15 13.
+17. ⊢ (A ∨ B → ¬A → B) → (A ∧ ¬A → B), subj_intro_ii 16.
+efq_equi_mtp. ⊢ (A ∧ ¬A → B) ↔ (A ∨ B → ¬A → B),
+  bij_intro 9 17.
+
 (*/subsection Projection lemmata *)
 
 01. 1 ⊢ A ∧ B ∧ C, hypo.
@@ -925,6 +945,11 @@ have been false, that is, ¬A must hold. But then A\_∨\_¬A holds again,
 which again contradicts the first assumption. So the first assumption
 must be false in itself, that is, ¬¬(A\_∨\_¬A) must hold. Now, via [[dne]],
 we finally obtain A\_∨\_¬A. q.e.d. *)
+
+(*/note efq_equi_mtp Shows that a specific form of
+[[efq|ex falso quodlibet]] is equivalent to the
+[[tollendo_ponens_right|modus tollendo ponens]], also called
+disjunctive syllogism. *)
 
 (*/note contraposition Two rules are automatically derived from this
 theorem. When applied to one argument, the contraposition rule<br>

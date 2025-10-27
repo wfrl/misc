@@ -42,7 +42,7 @@ inj_equi. ⊢ inj f X Y ↔ map f X Y ∧ ∀a. ∀b.
   a ∈ X → b ∈ X → app f a = app f b → a = b, def.
 sur_equi. ⊢ sur f X Y ↔ map f X Y ∧ rng f = Y, def.
 bij_equi. ⊢ bij f X Y ↔ inj f X Y ∧ sur f X Y, def.
-inv_eq. ⊢ inv f = {t | ∃x. ∃y. t = (y, x) ∧ (x, y) ∈ f}, def.
+inv_eq. ⊢ inv R = {t | ∃x. ∃y. t = (y, x) ∧ (x, y) ∈ R}, def.
 restr_eq. ⊢ restr f A = f ∩ (A × UnivCl), def.
 choice_function_equi. ⊢ choice_function f ↔
   function f ∧ ∀x. x ∈ dom f → app f x ∈ x, def.

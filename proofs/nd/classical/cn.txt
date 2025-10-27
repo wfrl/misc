@@ -16,8 +16,16 @@ indicator_eq. ⊢ χ A X =
 num_eq_intro. ⊢ (∃f. bij f X Y) → num_eq X Y,
   bij_elimr num_eq_equi.
 
-num_le_intro. ⊢ (∃f. inj f X Y) → num_le X Y,
+num_le_fold. ⊢ (∃f. inj f X Y) → num_le X Y,
   bij_elimr num_le_equi.
+
+01. 1 ⊢ inj f X Y, hypo.
+02. 1 ⊢ ∃f. inj f X Y, ex_intro 1.
+03. 1 ⊢ num_le X Y, num_le_fold 2.
+num_le_intro. ⊢ inj f X Y → num_le X Y, subj_intro 3.
+
+num_le_unfold. ⊢ num_le X Y → ∃f. inj f X Y,
+  bij_eliml num_le_equi.
 
 01. 1 ⊢ num_le X Y, hypo.
 02. 2 ⊢ ¬∃f. sur f X Y, hypo.
@@ -25,6 +33,16 @@ num_le_intro. ⊢ (∃f. inj f X Y) → num_le X Y,
 04. 1, 2 ⊢ num_lt X Y, rsubj_elim num_lt_equi 3.
 num_lt_intro. ⊢ num_le X Y → (¬∃f. sur f X Y) → num_lt X Y,
   subj_intro_ii 4.
+
+01. 1 ⊢ num_le X Y, hypo.
+02. 2 ⊢ A ⊆ X, hypo.
+03. 1 ⊢ ∃f. inj f X Y, num_le_unfold 1.
+04. 4 ⊢ inj f X Y, hypo.
+05. 2, 4 ⊢ inj (restr f A) A Y, restr_is_inj 4 2.
+06. 2, 4 ⊢ num_le A Y, num_le_intro 5.
+07. 1, 2 ⊢ num_le A Y, ex_elim 3 6.
+num_le_subclass. ⊢ num_le X Y → A ⊆ X →
+  num_le A Y, subj_intro_ii 7.
 
 01. 1 ⊢ map f X Y, hypo.
 02. 2 ⊢ set X, hypo.
@@ -320,51 +338,51 @@ let D = {x | x ∈ X ∧ ¬x ∈ app f x}.
 53. 25, 26 ⊢ ⊥, ex_elim 26 52.
 54. 25 ⊢ ¬∃f. sur f X (power X), neg_intro 53.
 
-55. ⊢ num_le X (power X), num_le_intro 24.
+55. ⊢ num_le X (power X), num_le_fold 24.
 56. 25 ⊢ num_lt X (power X), num_lt_intro 55 54.
 Cantor's_theorem. ⊢ set X → num_lt X (power X), subj_intro 56.
 end
 
 begin
-let h A = X \ img g (Y \ img f A).
-let Gh = {t | ∃A. A ∈ power X ∧ t = (A, h A)}.
+let h S = X \ img g (Y \ img f S).
+let Gh = {t | ∃S. S ∈ power X ∧ t = (S, h S)}.
 01. 1 ⊢ set X, hypo.
 02. 2 ⊢ rng g ⊆ X, hypo.
 03. ⊢ Gh = Gh, eq_refl.
 
-04. 4 ⊢ A ∈ power X, hypo.
-05. ⊢ h A ⊆ X, diff_incl.
-06. 1 ⊢ set (h A), subset 5 1.
-07. 1 ⊢ h A ∈ power X, power_intro 6 5.
-08. 1, 4 ⊢ h A ∈ power X, wk 7.
-09. 1 ⊢ A ∈ power X → h A ∈ power X, subj_intro 8.
-10. 1 ⊢ ∀A. A ∈ power X → h A ∈ power X, uq_intro 9.
+04. 4 ⊢ S ∈ power X, hypo.
+05. ⊢ h S ⊆ X, diff_incl.
+06. 1 ⊢ set (h S), subset 5 1.
+07. 1 ⊢ h S ∈ power X, power_intro 6 5.
+08. 1, 4 ⊢ h S ∈ power X, wk 7.
+09. 1 ⊢ S ∈ power X → h S ∈ power X, subj_intro 8.
+10. 1 ⊢ ∀S. S ∈ power X → h S ∈ power X, uq_intro 9.
 
-11. 11 ⊢ A2 ⊆ X, hypo.
-12. 12 ⊢ A1 ⊆ A2, hypo.
-13. 12 ⊢ img f A1 ⊆ img f A2, img_incl 12.
-14. 12 ⊢ Y \ (img f A2) ⊆ Y \ (img f A1), incl_contraposition 13.
-15. 12 ⊢ img g (Y \ (img f A2)) ⊆ img g (Y \ (img f A1)), img_incl 14.
-16. 12 ⊢ h A1 ⊆ h A2, incl_contraposition 15.
+11. 11 ⊢ T ⊆ X, hypo.
+12. 12 ⊢ S ⊆ T, hypo.
+13. 12 ⊢ img f S ⊆ img f T, img_incl 12.
+14. 12 ⊢ Y \ (img f T) ⊆ Y \ (img f S), incl_contraposition 13.
+15. 12 ⊢ img g (Y \ (img f T)) ⊆ img g (Y \ (img f S)), img_incl 14.
+16. 12 ⊢ h S ⊆ h T, incl_contraposition 15.
 
-17. 11, 12 ⊢ A1 ⊆ X, incl_trans 12 11.
-18. 1, 11, 12 ⊢ set A1, subset 17 1.
-19. 1, 11 ⊢ set A2, subset 11 1.
-20. 1, 11, 12 ⊢ A1 ∈ power X, power_intro 18 17.
-21. 1, 11 ⊢ A2 ∈ power X, power_intro 19 11.
-22. 1, 11, 12 ⊢ app Gh A1 = h A1, map_from_term_app 3 10 20.
-23. 1, 11 ⊢ app Gh A2 = h A2, map_from_term_app 3 10 21.
+17. 11, 12 ⊢ S ⊆ X, incl_trans 12 11.
+18. 1, 11, 12 ⊢ set S, subset 17 1.
+19. 1, 11 ⊢ set T, subset 11 1.
+20. 1, 11, 12 ⊢ S ∈ power X, power_intro 18 17.
+21. 1, 11 ⊢ T ∈ power X, power_intro 19 11.
+22. 1, 11, 12 ⊢ app Gh S = h S, map_from_term_app 3 10 20.
+23. 1, 11 ⊢ app Gh T = h T, map_from_term_app 3 10 21.
 
-24. 1, 11, 12 ⊢ app Gh A1 ⊆ h A2,
-  eq_subst_rev 22 16, P t ↔ t ⊆ h A2.
-25. 1, 11, 12 ⊢ app Gh A1 ⊆ app Gh A2,
-  eq_subst_rev 23 24, P t ↔ app Gh A1 ⊆ t.
-26. 1 ⊢ A2 ⊆ X → A1 ⊆ A2 →
-  app Gh A1 ⊆ app Gh A2, subj_intro_ii 25.
-27. 1 ⊢ ∀A2. A2 ⊆ X → A1 ⊆ A2 →
-  app Gh A1 ⊆ app Gh A2, uq_intro 26.
-28. 1 ⊢ ∀A1. ∀A2. A2 ⊆ X → A1 ⊆ A2 →
-  app Gh A1 ⊆ app Gh A2, uq_intro 27.
+24. 1, 11, 12 ⊢ app Gh S ⊆ h T,
+  eq_subst_rev 22 16, P t ↔ t ⊆ h T.
+25. 1, 11, 12 ⊢ app Gh S ⊆ app Gh T,
+  eq_subst_rev 23 24, P t ↔ app Gh S ⊆ t.
+26. 1 ⊢ T ⊆ X → S ⊆ T →
+  app Gh S ⊆ app Gh T, subj_intro_ii 25.
+27. 1 ⊢ ∀T. T ⊆ X → S ⊆ T →
+  app Gh S ⊆ app Gh T, uq_intro 26.
+28. 1 ⊢ ∀S. ∀T. T ⊆ X → S ⊆ T →
+  app Gh S ⊆ app Gh T, uq_intro 27.
 29. 1 ⊢ map Gh (power X) (power X), map_from_term 3 10.
 30. 1 ⊢ ∃A. A ⊆ X ∧ app Gh A = A ∧
   (∀U. U ⊆ X → app Gh U = U → A ⊆ U),
@@ -383,19 +401,98 @@ let Gh = {t | ∃A. A ∈ power X ∧ t = (A, h A)}.
 40. 2 ⊢ X \ h A = img g (Y \ img f A), diff_is_involution 39.
 41. 1, 2, 31 ⊢ X \ A = img g (Y \ img f A),
   eq_subst 37 40, P t ↔ X \ t = img g (Y \ img f A).
-42. ⊢ img f A = img f A, eq_refl.
-43. 1, 2, 31 ⊢ img f A = img f A ∧
-  X \ A = img g (Y \ img f A), conj_intro 42 41.
-44. 1, 2, 31 ⊢ ∃B. img f A = B ∧
-  X \ A = img g (Y \ B), ex_intro 43.
-45. 1, 2, 31 ⊢ ∃A. ∃B. img f A = B ∧
-  X \ A = img g (Y \ B), ex_intro 44.
-46. 1, 2 ⊢ ∃A. ∃B. img f A = B ∧
-  X \ A = img g (Y \ B), ex_elim 30 45.
+42. 1, 2, 31 ⊢ img g (Y \ img f A) = X \ A, eq_symm 41.
+43. ⊢ img f A = img f A, eq_refl.
+44. 31 ⊢ A ⊆ X ∧ img f A = img f A, conj_intro 32 43.
+45. 1, 2, 31 ⊢ A ⊆ X ∧ img f A = img f A ∧
+  img g (Y \ img f A) = X \ A, conj_intro 44 42.
+46. 1, 2, 31 ⊢ ∃B. A ⊆ X ∧ img f A = B ∧
+  img g (Y \ B) = X \ A, ex_intro 45.
+47. 1, 2, 31 ⊢ ∃A. ∃B. A ⊆ X ∧ img f A = B ∧
+  img g (Y \ B) = X \ A, ex_intro 46.
+48. 1, 2 ⊢ ∃A. ∃B. A ⊆ X ∧ img f A = B ∧
+  img g (Y \ B) = X \ A, ex_elim 30 47.
 Banach_decomposition_theorem. ⊢ set X → rng g ⊆ X →
-  ∃A. ∃B. img f A = B ∧ X \ A = img g (Y \ B),
-  subj_intro_ii 46.
+  ∃A. ∃B. A ⊆ X ∧ img f A = B ∧ img g (Y \ B) = X \ A,
+  subj_intro_ii 48.
 end
+
+01. 1 ⊢ set X, hypo.
+02. 2 ⊢ num_le X Y, hypo.
+03. 3 ⊢ num_le Y X, hypo.
+04. 2 ⊢ ∃f. inj f X Y, num_le_unfold 2.
+05. 3 ⊢ ∃g. inj g Y X, num_le_unfold 3.
+06. 6 ⊢ inj f X Y, hypo.
+07. 7 ⊢ inj g Y X, hypo.
+08. 6 ⊢ map f X Y, inj_is_map 6.
+09. 7 ⊢ map g Y X, inj_is_map 7.
+10. 7 ⊢ rng g ⊆ X, map_rng 9.
+11. 1, 7 ⊢ ∃A. ∃B. A ⊆ X ∧ img f A = B ∧ img g (Y \ B) = X \ A,
+  Banach_decomposition_theorem 1 10.
+12. 12 ⊢ ∃B. A ⊆ X ∧ img f A = B ∧ img g (Y \ B) = X \ A, hypo.
+13. 13 ⊢ A ⊆ X ∧ img f A = B ∧ img g (Y \ B) = X \ A, hypo.
+14. 13 ⊢ A ⊆ X, conj_elimll 13.
+15. 13 ⊢ img f A = B, conj_elimlr 13.
+16. 13 ⊢ img g (Y \ B) = X \ A, conj_elimr 13.
+17. 6, 13 ⊢ inj (restr f A) A Y, restr_is_inj 6 14.
+18. 6, 13 ⊢ map (restr f A) A Y, map_restr 8 14.
+19. ⊢ img f A = img (restr f A) A, restr_img_self.
+20. 6, 13 ⊢ img (restr f A) A = rng (restr f A),
+  map_img_of_dom_is_rng 18.
+21. 6, 13 ⊢ img f A = rng (restr f A), eq_trans 19 20.
+22. 6, 13 ⊢ rng (restr f A) = B, eq_trans_ll 21 15.
+23. 6, 13 ⊢ sur (restr f A) A B, rng_restr_is_sur 18 22.
+24. 6, 13 ⊢ rng (restr f A) ⊆ B, incl_from_eq 22.
+25. 6, 13 ⊢ inj (restr f A) A B, rng_restr_is_inj 17 24.
+26. 6, 13 ⊢ bij (restr f A) A B, bij_from_inj_sur 25 23.
+27. ⊢ Y \ B ⊆ Y, diff_incl.
+28. 7 ⊢ inj (restr g (Y \ B)) (Y \ B) X, restr_is_inj 7 27.
+29. 7 ⊢ map (restr g (Y \ B)) (Y \ B) X, inj_is_map 28.
+30. ⊢ img g (Y \ B) = img (restr g (Y \ B)) (Y \ B), restr_img_self.
+31. 13 ⊢ img (restr g (Y \ B)) (Y \ B) = X \ A, eq_trans_ll 30 16.
+32. 7 ⊢ img (restr g (Y \ B)) (Y \ B) = rng (restr g (Y \ B)),
+  map_img_of_dom_is_rng 29.
+33. 7, 13 ⊢ rng (restr g (Y \ B)) = X \ A, eq_trans_ll 32 31.
+34. 7, 13 ⊢ rng (restr g (Y \ B)) ⊆ X \ A, incl_from_eq 33.
+35. 7, 13 ⊢ inj (restr g (Y \ B)) (Y \ B) (X \ A),
+  rng_restr_is_inj 28 34.
+36. 7, 13 ⊢ sur (restr g (Y \ B)) (Y \ B) (X \ A),
+  rng_restr_is_sur 29 33.
+37. 7, 13 ⊢ bij (restr g (Y \ B)) (Y \ B) (X \ A),
+  bij_from_inj_sur 35 36.
+38. 7, 13 ⊢ bij (inv (restr g (Y \ B))) (X \ A) (Y \ B),
+  inv_of_bij_is_bij 37.
+39. ⊢ A ∩ (X \ A) = ∅, intersection_rel_compl.
+40. ⊢ B ∩ (Y \ B) = ∅, intersection_rel_compl.
+41. 6, 7, 13 ⊢ bij (restr f A ∪ inv (restr g (Y \ B)))
+  (A ∪ (X \ A)) (B ∪ (Y \ B)), bij_union 26 38 39 40.
+
+42. ⊢ img f A ⊆ rng f, img_incl_in_rng.
+43. 6 ⊢ rng f ⊆ Y, map_rng 8.
+44. 6 ⊢ img f A ⊆ Y, incl_trans 42 43.
+45. 6, 13 ⊢ B ⊆ Y, eq_subst 15 44, P t ↔ t ⊆ Y.
+46. 13 ⊢ (X \ A) ∪ A = X, diff_union_subclass 14.
+47. 6, 13 ⊢ (Y \ B) ∪ B = Y, diff_union_subclass 45.
+48. ⊢ A ∪ (X \ A) = (X \ A) ∪ A, union_comm.
+49. ⊢ B ∪ (Y \ B) = (Y \ B) ∪ B, union_comm.
+50. 13 ⊢ A ∪ (X \ A) = X, eq_trans 48 46.
+51. 6, 13 ⊢ B ∪ (Y \ B) = Y, eq_trans 49 47.
+52. 6, 7, 13 ⊢
+  bij (restr f A ∪ inv (restr g (Y \ B))) X (B ∪ (Y \ B)),
+  eq_subst 50 41,
+  P t ↔ bij (restr f A ∪ inv (restr g (Y \ B))) t (B ∪ (Y \ B)).
+53. 6, 7, 13 ⊢
+  bij (restr f A ∪ inv (restr g (Y \ B))) X Y, eq_subst 51 52,
+  P t ↔ bij (restr f A ∪ inv (restr g (Y \ B))) X t.
+
+54. 6, 7, 13 ⊢ ∃h. bij h X Y, ex_intro 53.
+55. 6, 7, 13 ⊢ num_eq X Y, num_eq_intro 54.
+56. 6, 7, 12 ⊢ num_eq X Y, ex_elim 12 55.
+57. 1, 6, 7 ⊢ num_eq X Y, ex_elim 11 56.
+58. 1, 3, 6 ⊢ num_eq X Y, ex_elim 5 57.
+59. 1, 2, 3 ⊢ num_eq X Y, ex_elim 4 58.
+Cantor_Bernstein_theorem. ⊢ set X → num_le X Y →
+  num_le Y X → num_eq X Y, subj_intro_iii 59.
 
 (*/note num_eq_equi
 Two sets X, Y are called <i>equinumerous</i>, written |X| = |Y|, if
@@ -462,4 +559,72 @@ directly from the Definition of\_D. Thus<br>
 \_\_x ∈ f x ↔ x ∉ f x,<br>
 but this is a contradiction, as shown in [[diag_contra]]. q.e.d.
 *)
+
+(*/note Banach_decomposition_theorem
+Given sets X, Y and two functions f:\_X\_→\_Y and g:\_Y\_→\_X. Then
+there exists a decomposition of X into two disjoint subsets A and X\A,
+and a decomposition of Y into two disjoint subsets B and Y\B,
+such that f[A]\_= B and g[Y\B]\_= X\A.<br>
+<br>
+<b>Proof idea</b><br>
+The idea is to reduce the problem to finding a suitable function on the
+[[power_eq|power set]] of X, to which the
+[[incl_Knaster_Tarski_least|Knaster-Tarski fixed-point theorem]]
+is applied. The second equation takes on the role of the transformed
+fixed-point equation, while the first equation holds by definition.<br>
+<br>
+<b>Proof sketch</b><br>
+We consider the [[power_eq|power set]] P(X), which forms a complete
+lattice under the [[incl_equi|inclusion]] relation ⊆. We define the
+function<br>
+\_\_h: P(X) → P(X), h(S) := X\g[Y\f[S]].<br>
+A fixed point of this function is a set A ⊆ X for which h(A) = A.
+Unfolding h, this equality is X\g[Y\f[A]]\_= A, which, by taking the
+complement of both sides, is precisely g[Y\f[A]] = X\A, the statement
+to be proven. To apply the Knaster-Tarski theorem, we must show that\_h
+is monotone (order-preserving), i.e., for S\_⊆\_T,
+it follows that h(S)\_⊆\_h(T). Let S,\_T ⊆ X with S\_⊆\_T. Then<br>
+\_\_f[S] ⊆ f[T] (the [[img_eq|image]] under a function
+preserves inclusion),<br>
+\_\_Y\f[T] ⊆ Y\f[S] (taking the [[diff_eq|complement]]
+reverses inclusion),<br>
+\_\_g[Y\f[T]] ⊆ g[Y\f[S]] (the image under a
+function preserves inclusion),<br>
+\_\_X\g[Y\f[S]] ⊆ X\g[Y\f[T]] (taking the
+complement again reverses the inclusion).<br>
+By definition, this is equivalent to h(S)\_⊆\_h(T).
+Thus, the function h is monotone. Since h is a monotone function on the
+complete lattice (P(X),\_⊆), the Knaster-Tarski fixed-point theorem
+guarantees the existence of (at least) one fixed point A ∈ P(X) such
+that h(A) = A. As shown, this is equivalent to the statement
+g[Y\B] = X\A with B := f[A]. q.e.d. *)
+
+(*/note Cantor_Bernstein_theorem
+This theorem states that [[num_le_equi|not greater than]] behaves
+antisymmetric, that is, |X|\_=\_|Y| follows from |X|\_≤\_|Y| and
+|Y|\_≤\_|X|. In words, X and Y are [[num_eq_equi|equinumerous]]
+if, on the one hand, X is not greater than Y and, on the other hand, Y
+is not greater than X. This means that a [[bij_equi|bijection]] from
+X to Y exists if there is an [[inj_equi|injection]] from X to Y on the
+one hand and an injection from Y to X on the other.<br>
+<br>
+<b>Proof idea</b><br>
+According to the premises, there is an injection from X to Y and an
+injection from Y to X. Using the [[Banach_decomposition_theorem|Banach
+decomposition theorem]], X and Y can now be decomposed into disjoint
+subsets such that the injections take the form of bijections when
+restricted to these subsets. For the latter, we consider the inverse
+mapping so that both go in the same direction. These two bijections
+can now be joined together to form a bijection from X to\_Y.<br>
+<br>
+<b>Proof sketch</b><br>
+According to the premises, we have an injection f:\_X →\_Y and an
+injection g:\_Y\_→\_X. Furthermore, according to the
+[[Banach_decomposition_theorem|Banach decomposition theorem]], there
+exist A\_⊆\_X and B\_⊆\_Y such that f[A] = B and g[Y\B] = X\A.
+Therefore, the [[restr_eq|restrictions]] f|<sub>A</sub>: A → B and
+g|<sub>Y\B</sub>: Y\B → X\A are bijective. Consequently, the inverse of
+g|<sub>Y\B</sub> is also bijective. The two can now be combined via
+[[bij_union]] to form a bijection X\_→\_Y, since both X\_= A\_∪\_(X\A)
+and Y\_= B\_∪\_(Y\B) are unions of disjoint sets. q.e.d. *)
 
