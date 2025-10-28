@@ -114,7 +114,8 @@ class containing every element that appears in both of them. *)
 
 (*/note diff_eq The <i>difference</i> of two classes is the
 class containing every element that appears in the first one, but
-not in the second one. *)
+not in the second one. It is also called the <i>relative complement</i>
+of B in A, provided that B\_⊆\_A. *)
 
 (*/note compl_eq The <i>complement</i> of a class A is the class
 containing every element that does not appear in A. *)
@@ -171,9 +172,9 @@ appearing in R. *)
 containing every element that is the second component of some pair
 appearing in R. *)
 
-(*/note img_eq The <i>image</i> of a relation R under A is the class
-containing every element that is the second component of a pair whose
-first component is in A. *)
+(*/note img_eq The <i>image</i> of a relation R under A, written
+R[A] in common notation, is the class containing every element that is
+the second component of a pair whose first component is in A. *)
 
 (*/note inv_img_eq The <i>inverse image</i> of a relation R under B is
 the class containing every element that is the first component of a
