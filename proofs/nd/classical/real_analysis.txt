@@ -1,10 +1,13 @@
 
 (*/chapter Real analysis *)
 
-(*/section Archimedean property *)
+(*/section Upper bounds *)
 
 is_sup_unfold. ⊢ is_sup s A → upper_bound s A ∧
   (∀b. b ∈ ℝ → upper_bound b A → s ≤ b), bij_eliml is_sup_equi.
+
+upper_bound_fold. ⊢ (∀x. x ∈ A → x ≤ b) →
+  upper_bound b A, bij_elimr upper_bound_equi.
 
 01. 1 ⊢ upper_bound b A, hypo.
 02. 2 ⊢ x ∈ A, hypo.
@@ -12,6 +15,63 @@ is_sup_unfold. ⊢ is_sup s A → upper_bound s A ∧
 04. 1, 2 ⊢ x ≤ b, uq_bounded_elim 3 2.
 upper_bound_elim. ⊢ upper_bound b A → x ∈ A → x ≤ b,
   subj_intro_ii 4.
+
+01. 1 ⊢ A ⊆ ℝ, hypo.
+02. 2 ⊢ b ∈ ℝ, hypo.
+03. 3 ⊢ ¬upper_bound b A, hypo.
+04. ⊢ upper_bound b A ↔ ∀x. x ∈ A → x ≤ b, upper_bound_equi.
+05. ⊢ ¬upper_bound b A ↔ ¬∀x. x ∈ A → x ≤ b, equi_cong_neg 4.
+06. 3 ⊢ ¬∀x. x ∈ A → x ≤ b, lsubj_elim 5 3.
+07. 3 ⊢ ∃x. x ∈ A ∧ ¬(x ≤ b), neg_uq_bounded 6.
+08. 8 ⊢ x ∈ A ∧ ¬(x ≤ b), hypo.
+09. 8 ⊢ x ∈ A, conj_eliml 8.
+10. 8 ⊢ ¬(x ≤ b), conj_elimr 8.
+11. 1, 8 ⊢ x ∈ ℝ, incl_elim 1 9.
+12. 1, 2, 8 ⊢ b < x, rle_neg 11 2 10.
+13. 1, 2, 8 ⊢ x ∈ A ∧ b < x, conj_intro 9 12.
+14. 1, 2, 8 ⊢ ∃x. x ∈ A ∧ b < x, ex_intro 13.
+15. 1, 2, 3 ⊢ ∃x. x ∈ A ∧ b < x, ex_elim 7 14.
+upper_bound_neg. ⊢ A ⊆ ℝ → b ∈ ℝ → ¬upper_bound b A →
+  ∃x. x ∈ A ∧ b < x, subj_intro_iii 15.
+
+01. 1 ⊢ s ∈ ℝ, hypo.
+02. 2 ⊢ x ∈ ℝ, hypo.
+03. 3 ⊢ is_sup s A, hypo.
+04. 4 ⊢ x < s, hypo.
+05. 5 ⊢ upper_bound x A, hypo.
+06. 3 ⊢ upper_bound s A ∧
+  (∀b. b ∈ ℝ → upper_bound b A → s ≤ b), is_sup_unfold 3.
+07. 3 ⊢ upper_bound s A, conj_eliml 6.
+08. 3 ⊢ ∀b. b ∈ ℝ → upper_bound b A → s ≤ b, conj_elimr 6.
+09. 2, 3 ⊢ upper_bound x A → s ≤ x, uq_bounded_elim 8 2.
+10. 2, 3, 5 ⊢ s ≤ x, subj_elim 9 5.
+11. 1, 2, 3, 4, 5 ⊢ s < s, rle_lt_trans 1 2 1 10 4.
+12. 1, 2, 3, 4, 5 ⊢ ¬(s = s), neq_from_lt 11.
+13. ⊢ s = s, eq_refl.
+14. 1, 2, 3, 4, 5 ⊢ ⊥, neg_elim 12 13.
+15. 1, 2, 3, 4 ⊢ ¬upper_bound x A, neg_intro 14.
+no_upper_bound_lt_sup. ⊢ s ∈ ℝ → x ∈ ℝ → is_sup s A →
+  x < s → ¬upper_bound x A, subj_intro_iv 15.
+
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ b ∈ ℝ, hypo.
+03. 3 ⊢ A ⊆ ℝ, hypo.
+04. 4 ⊢ upper_bound a A, hypo.
+05. 5 ⊢ a < b, hypo.
+06. 6 ⊢ x ∈ A, hypo.
+07. 4, 6 ⊢ x ≤ a, upper_bound_elim 4 6.
+08. 3, 6 ⊢ x ∈ ℝ, incl_elim 3 6.
+09. 1, 2, 3, 4, 5, 6 ⊢ x < b, rle_lt_trans 8 1 2 7 5.
+10. 1, 2, 3, 4, 5, 6 ⊢ x ≤ b, le_from_lt 9.
+11. 1, 2, 3, 4, 5 ⊢ x ∈ A → x ≤ b, subj_intro 10.
+12. 1, 2, 3, 4, 5 ⊢ ∀x. x ∈ A → x ≤ b, uq_intro 11.
+13. 1, 2, 3, 4, 5 ⊢ upper_bound b A, upper_bound_fold 12.
+14. 1, 2, 3, 4 ⊢ a < b → upper_bound b A, subj_intro 13.
+upper_bound_weaken. ⊢ a ∈ ℝ → b ∈ ℝ → A ⊆ ℝ → upper_bound a A →
+  a < b → upper_bound b A, subj_intro_iv 14.
+
+
+(*/section Archimedean property *)
 
 01. 1 ⊢ ∃b. b ∈ ℝ ∧ upper_bound b ℕ, hypo.
 02. ⊢ ℕ ⊆ ℝ, nat_incl_in_real.
@@ -319,6 +379,131 @@ converges_mul_const. ⊢ r ∈ ℝ → L ∈ ℝ → map a ℕ ℝ →
   converges b (r⋅L), subj_intro_iv 63.
 
 
+(*/section Continuum induction *)
+
+begin
+let A = {x | x ∈ icc a b ∧ ico a x ⊆ S}.
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ b ∈ ℝ, hypo.
+03. 3 ⊢ a < b, hypo.
+04. 4 ⊢ S ⊆ ico a b, hypo.
+05. 5 ⊢ ∀x. x ∈ ico a b → ico a x ⊆ S →
+  ∃y. y ∈ ℝ ∧ x < y ∧ ico a y ⊆ S, hypo.
+06. 1 ⊢ a ≤ a, rle_refl 1.
+07. 3 ⊢ a ≤ b, le_from_lt 3.
+08. 1 ⊢ ico a a = ∅, ico_empty 1.
+09. 1, 3 ⊢ a ∈ ico a b, ico_intro 1 6 3.
+10. ⊢ ∅ ⊆ S, empty_set_is_least.
+11. 1 ⊢ ico a a ⊆ S, eq_incl_trans 8 10.
+
+12. 1, 3, 5 ⊢ ico a a ⊆ S → ∃y. y ∈ ℝ ∧ a < y ∧ ico a y ⊆ S,
+  uq_bounded_elim 5 9.
+13. 1, 3, 5 ⊢ ∃y. y ∈ ℝ ∧ a < y ∧ ico a y ⊆ S,
+  subj_elim 12 11.
+14. 14 ⊢ y ∈ ℝ ∧ a < y ∧ ico a y ⊆ S, hypo.
+15. 14 ⊢ y ∈ ℝ, conj_elimll 14.
+16. 14 ⊢ a < y, conj_elimlr 14.
+17. 14 ⊢ ico a y ⊆ S, conj_elimr 14.
+18. 4, 14 ⊢ ico a y ⊆ ico a b, incl_trans 17 4.
+19. 2, 3, 4, 14 ⊢ y ≤ b, rle_from_ico_incl 15 2 7 18.
+20. 14 ⊢ a ≤ y, le_from_lt 16.
+21. 2, 3, 4, 14 ⊢ y ∈ icc a b, icc_intro 15 20 19.
+22. 2, 3, 4, 14 ⊢ y ∈ icc a b ∧ ico a y ⊆ S, conj_intro 21 17.
+23. 14 ⊢ set y, set_intro 15.
+24. 2, 3, 4, 14 ⊢ y ∈ A, comp_intro 23 22.
+25. 2, 3, 4, 14 ⊢ ¬(A = ∅), non_empty_from_witness 24.
+26. 1, 2, 3, 4, 5 ⊢ ¬(A = ∅), ex_elim 13 25.
+
+27. 27 ⊢ x ∈ A, hypo.
+28. 27 ⊢ x ∈ icc a b ∧ ico a x ⊆ S, comp_elim 27.
+29. 27 ⊢ x ∈ icc a b, conj_eliml 28.
+30. 27 ⊢ x ∈ {x | x ∈ ℝ ∧ a ≤ x ∧ x ≤ b},
+  eq_subst icc_eq 29, P t ↔ x ∈ t.
+31. 27 ⊢ x ∈ ℝ ∧ a ≤ x ∧ x ≤ b, comp_elim 30.
+32. 27 ⊢ x ≤ b, conj_elimr 31.
+33. ⊢ x ∈ A → x ≤ b, subj_intro 32.
+34. ⊢ ∀x. x ∈ A → x ≤ b, uq_intro 33.
+35. ⊢ upper_bound b A, upper_bound_fold 34.
+36. 2 ⊢ b ∈ ℝ ∧ upper_bound b A, conj_intro 2 35.
+37. 2 ⊢ ∃y. y ∈ ℝ ∧ upper_bound y A, ex_intro 36.
+
+38. ⊢ A ⊆ icc a b, sep_is_subclass.
+39. ⊢ A ⊆ ℝ, incl_trans 38 icc_incl_in_real.
+40. 1, 2, 3, 4, 5 ⊢ ∃c. c ∈ ℝ ∧ is_sup c A, lub_property 39 26 37.
+41. 41 ⊢ c ∈ ℝ ∧ is_sup c A, hypo.
+
+42. 42 ⊢ p ∈ ico a c, hypo.
+43. 42 ⊢ p ∈ ℝ ∧ a ≤ p ∧ p < c, ico_elim 42.
+44. 42 ⊢ p ∈ ℝ, conj_elimll 43.
+45. 42 ⊢ a ≤ p, conj_elimlr 43.
+46. 42 ⊢ p < c, conj_elimr 43.
+47. 41 ⊢ c ∈ ℝ, conj_eliml 41.
+48. 41 ⊢ is_sup c A, conj_elimr 41.
+49. 41, 42 ⊢ ¬upper_bound p A, no_upper_bound_lt_sup 47 44 48 46.
+50. 41, 42 ⊢ ∃x. x ∈ A ∧ p < x, upper_bound_neg 39 44 49.
+51. 51 ⊢ x ∈ A ∧ p < x, hypo.
+52. 51 ⊢ x ∈ A, conj_eliml 51.
+53. 51 ⊢ p < x, conj_elimr 51.
+54. 51 ⊢ x ∈ icc a b ∧ ico a x ⊆ S, comp_elim 52.
+55. 51 ⊢ ico a x ⊆ S, conj_elimr 54.
+56. 42, 51 ⊢ p ∈ ico a x, ico_intro 44 45 53.
+57. 42, 51 ⊢ p ∈ S, incl_elim 55 56.
+58. 41, 42 ⊢ p ∈ S, ex_elim 50 57.
+59. 41 ⊢ p ∈ ico a c → p ∈ S, subj_intro 58.
+60. 41 ⊢ ∀p. p ∈ ico a c → p ∈ S, uq_intro 59.
+61. 41 ⊢ ico a c ⊆ S, incl_intro 60.
+
+62. 41 ⊢ upper_bound c A ∧
+  (∀y. y ∈ ℝ → upper_bound y A → c ≤ y), is_sup_unfold 48.
+63. 41 ⊢ upper_bound c A, conj_eliml 62.
+64. 1, 3 ⊢ a ∈ icc a b, icc_intro 1 6 7.
+65. 1, 3 ⊢ a ∈ icc a b ∧ ico a a ⊆ S, conj_intro 64 11.
+66. 1, 3 ⊢ set a, set_intro 64.
+67. 1, 3 ⊢ a ∈ A, comp_intro 66 65,
+  P x ↔ x ∈ icc a b ∧ ico a x ⊆ S.
+68. 1, 3, 41 ⊢ a ≤ c, upper_bound_elim 63 67.
+69. 69 ⊢ c < b, hypo.
+70. 1, 3, 41, 69 ⊢ c ∈ ico a b, ico_intro 47 68 69.
+71. 1, 3, 5, 41, 69 ⊢ ico a c ⊆ S →
+  ∃y. y ∈ ℝ ∧ c < y ∧ ico a y ⊆ S, uq_bounded_elim 5 70.
+72. 1, 3, 5, 41, 69 ⊢ ∃y. y ∈ ℝ ∧ c < y ∧ ico a y ⊆ S,
+  subj_elim 71 61.
+73. 73 ⊢ y ∈ ℝ ∧ c < y ∧ ico a y ⊆ S, hypo.
+74. 73 ⊢ y ∈ ℝ, conj_elimll 73.
+75. 73 ⊢ c < y, conj_elimlr 73.
+76. 73 ⊢ ico a y ⊆ S, conj_elimr 73.
+77. 4, 73 ⊢ ico a y ⊆ ico a b, incl_trans 76 4.
+78. 2, 3, 4, 73 ⊢ y ≤ b, rle_from_ico_incl 74 2 7 77.
+79. 1, 3, 41, 73 ⊢ a < y, rle_lt_trans 1 47 74 68 75.
+80. 1, 3, 41, 73 ⊢ a ≤ y, le_from_lt 79.
+81. 1, 2, 3, 4, 41, 73 ⊢ y ∈ icc a b, icc_intro 74 80 78.
+82. 1, 2, 3, 4, 41, 73 ⊢ y ∈ icc a b ∧ ico a y ⊆ S,
+  conj_intro 81 76.
+83. 73 ⊢ set y, set_intro 74.
+84. 1, 2, 3, 4, 41, 73 ⊢ y ∈ A, comp_intro 83 82.
+85. 1, 2, 3, 4, 41, 73 ⊢ y ≤ c, upper_bound_elim 63 84.
+86. 1, 2, 3, 4, 41, 73 ⊢ y < y, rle_lt_trans 74 47 74 85 75.
+87. 1, 2, 3, 4, 41, 73 ⊢ ⊥, lt_self_contra 86.
+88. 1, 2, 3, 4, 5, 41, 69 ⊢ ⊥, ex_elim 72 87.
+89. 1, 2, 3, 4, 5, 41 ⊢ ¬(c < b), neg_intro 88.
+90. 1, 2, 3, 4, 5, 41 ⊢ b ≤ c, rlt_neg 47 2 89.
+91. 4, 41 ⊢ ico a c ⊆ ico a b, incl_trans 61 4.
+92. 2, 3, 4, 41 ⊢ c ≤ b, rle_from_ico_incl 47 2 7 91.
+93. 1, 2, 3, 4, 5, 41 ⊢ c = b, rle_antisym 47 2 92 90.
+94. 1, 2, 3, 4, 5, 41 ⊢ ico a b ⊆ S,
+  eq_subst 93 61, P t ↔ ico a t ⊆ S.
+95. 1, 2, 3, 4, 5, 41 ⊢ S = ico a b, incl_antisym 4 94.
+96. 1, 2, 3, 4, 5 ⊢ S = ico a b, ex_elim 40 95.
+97. 1, 2, 3, 4 ⊢ (∀x. x ∈ ico a b → ico a x ⊆ S →
+  ∃y. y ∈ ℝ ∧ x < y ∧ ico a y ⊆ S) → S = ico a b,
+  subj_intro 96.
+continuum_induction. ⊢ a ∈ ℝ → b ∈ ℝ → a < b → S ⊆ ico a b →
+  (∀x. x ∈ ico a b → ico a x ⊆ S →
+    ∃y. y ∈ ℝ ∧ x < y ∧ ico a y ⊆ S) →
+  S = ico a b, subj_intro_iv 97.
+end
+
+
 (*/note nat_unbounded
 This theorem states that the set of natural numbers is unbounded
 in the real numbers.<br>
@@ -448,3 +633,47 @@ r\_≠\_0. Let ε\_>\_0 be fixed, but arbitrary. Let ε'\_:=\_ε/|r|. Since
 Thus, for every ε, there exists an index n<sub>0</sub> from which on
 this inequality is satisfied, meaning that (r⋅a<sub>n</sub>) must
 converge to r⋅L. q.e.d. *)
+
+(*/note continuum_induction
+Induction principle for the continuum of real numbers.<br>
+<br>
+Let a < b and S ⊆ [a, b). If<br>
+\_\_∀x ∈ [a, b). [a, x) ⊆ S → ∃y > x. [a, y) ⊆ S<br>
+then S = [a, b). The base case is contained via x\_:=\_a, since
+[a,\_a)\_=\_∅.<br>
+<br>
+<b>Proof sketch</b><br>
+Let A := {x ∈ [a, b] | [a, x) ⊆ S}.<br>
+<br>
+1. <i>Show that A is non-empty and bounded above.</i> Non-empty: Since
+a ∈ [a,\_b) and [a,\_a) = ∅ ⊆ S, our assumption for x = a implies there
+is a y > a with [a,\_y) ⊆ S. Since S ⊆ [a,\_b), we have [a,\_y) ⊆ [a,\_b),
+which means y ≤ b. Thus, y ∈ [a, b], and by definition y ∈ A.
+Therefore, A ≠ ∅. Bounded above: By definition, if x ∈ A, then
+x ∈ [a,\_b], so x ≤ b. Thus, b is an [[upper_bound_equi|upper bound]]
+for A.<br>
+<br>
+2. <i>Define c as the supremum of A.</i> Since A is a non-empty,
+bounded-above subset of ℝ, by the [[lub_property|least-upper-bound
+property]], it has a [[is_sup_equi|supremum]]. Let c := sup\_A.<br>
+<br>
+3. <i>Show that [a, c) ⊆ S.</i> Let p ∈ [a,\_c). Then a ≤ p < c. Since
+c = sup\_A, p is not an upper bound for A. Thus, there exists an x ∈ A
+with p < x. By definition of A, we have [a,\_x) ⊆ S. Since a ≤ p < x,
+it follows that p ∈ [a,\_x), and therefore p ∈ S. This proves
+[a,\_c) ⊆ S.<br>
+<br>
+4. <i>Show that c = b.</i> Since b is an upper bound for A and c is the
+least upper bound, we have c ≤ b. Assume for contradiction that c < b.
+Since a ∈ A, we have a ≤ c, which means c ∈ [a,\_b). From step 3, we
+know [a,\_c) ⊆ S. By our main assumption (with x = c), there must exist
+a y ∈ ℝ such that c < y and [a,\_y) ⊆ S. From [a,\_y) ⊆ S ⊆ [a,\_b), we
+deduce y ≤ b. Thus, y ∈ [a,\_b] and [a,\_y) ⊆ S, which means y ∈ A.
+But y ∈ A implies y ≤ c (since c = sup A). This contradicts c < y.
+The assumption c < b must be false. Hence, c ≥ b. Combining c ≤ b and
+c ≥ b, we conclude c = b.<br>
+<br>
+5. <i>Conclusion.</i> Substituting c = b into the result from step 3,
+we get [a,\_b) ⊆ S. With the given hypothesis S ⊆ [a,\_ b), we have
+S = [a,\_b). q.e.d. *)
+

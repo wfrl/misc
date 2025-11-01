@@ -1281,6 +1281,12 @@ rreci_positive. ⊢ a ∈ ℝ → 0 < a → 0 < 1/a,
 rinv_positive. ⊢ a ∈ ℝ →
   0 < a → 0 < /a, subj_intro_ii 18.
 
+01. 1 ⊢ a < a, hypo.
+02. 1 ⊢ ¬(a = a), neq_from_lt 1.
+03. ⊢ a = a, eq_refl.
+04. 1 ⊢ ⊥, neg_elim 2 3.
+lt_self_contra. ⊢ a < a → ⊥, subj_intro 4.
+
 01. 1 ⊢ a ∈ ℝ, hypo.
 02. 2 ⊢ a < 0, hypo.
 03. 3 ⊢ 0 ≤ a, hypo.
@@ -1694,6 +1700,101 @@ rabs_triangle_ineq. ⊢ x ∈ ℝ → y ∈ ℝ →
 48. 1, 2 ⊢ abs (x⋅y) = (abs x)⋅(abs y), disj_elim 3 24 47.
 rabs_dist_mul. ⊢ x ∈ ℝ → y ∈ ℝ →
   abs (x⋅y) = (abs x)⋅(abs y), subj_intro_ii 48.
+
+
+(*/section Intervals *)
+
+ioo_eq. ⊢ ioo a b = {x | x ∈ ℝ ∧ a < x ∧ x < b}, def.
+ico_eq. ⊢ ico a b = {x | x ∈ ℝ ∧ a ≤ x ∧ x < b}, def.
+ioc_eq. ⊢ ioc a b = {x | x ∈ ℝ ∧ a < x ∧ x ≤ b}, def.
+icc_eq. ⊢ icc a b = {x | x ∈ ℝ ∧ a ≤ x ∧ x ≤ b}, def.
+
+01. 1 ⊢ x ∈ ℝ, hypo.
+02. 2 ⊢ a ≤ x, hypo.
+03. 3 ⊢ x < b, hypo.
+04. 1, 2 ⊢ x ∈ ℝ ∧ a ≤ x, conj_intro 1 2.
+05. 1, 2, 3 ⊢ x ∈ ℝ ∧ a ≤ x ∧ x < b, conj_intro 4 3.
+06. 1 ⊢ set x, set_intro 1.
+07. 1, 2, 3 ⊢ x ∈ {x | x ∈ ℝ ∧ a ≤ x ∧ x < b}, comp_intro 6 5.
+08. 1, 2, 3 ⊢ x ∈ ico a b, eq_subst_rev ico_eq 7, P t ↔ x ∈ t.
+ico_intro. ⊢ x ∈ ℝ → a ≤ x → x < b → x ∈ ico a b,
+  subj_intro_iii 8.
+
+01. 1 ⊢ x ∈ ico a b, hypo.
+02. 1 ⊢ x ∈ {x | x ∈ ℝ ∧ a ≤ x ∧ x < b},
+  eq_subst ico_eq 1, P t ↔ x ∈ t.
+03. 1 ⊢ x ∈ ℝ ∧ a ≤ x ∧ x < b, comp_elim 2.
+ico_elim. ⊢ x ∈ ico a b → x ∈ ℝ ∧ a ≤ x ∧ x < b,
+  subj_intro 3.
+
+01. 1 ⊢ x ∈ ℝ, hypo.
+02. 2 ⊢ a ≤ x, hypo.
+03. 3 ⊢ x ≤ b, hypo.
+04. 1, 2 ⊢ x ∈ ℝ ∧ a ≤ x, conj_intro 1 2.
+05. 1, 2, 3 ⊢ x ∈ ℝ ∧ a ≤ x ∧ x ≤ b, conj_intro 4 3.
+06. 1 ⊢ set x, set_intro 1.
+07. 1, 2, 3 ⊢ x ∈ {x | x ∈ ℝ ∧ a ≤ x ∧ x ≤ b}, comp_intro 6 5.
+08. 1, 2, 3 ⊢ x ∈ icc a b, eq_subst_rev icc_eq 7, P t ↔ x ∈ t.
+icc_intro. ⊢ x ∈ ℝ → a ≤ x → x ≤ b → x ∈ icc a b,
+  subj_intro_iii 8.
+
+01. 1 ⊢ x ∈ icc a b, hypo.
+02. 1 ⊢ x ∈ {x | x ∈ ℝ ∧ a ≤ x ∧ x ≤ b},
+  eq_subst icc_eq 1, P t ↔ x ∈ t.
+03. 1 ⊢ x ∈ ℝ ∧ a ≤ x ∧ x ≤ b, comp_elim 2.
+04. 1 ⊢ x ∈ ℝ, conj_elimll 3.
+05. ⊢ x ∈ icc a b → x ∈ ℝ, subj_intro 4.
+06. ⊢ ∀x. x ∈ icc a b → x ∈ ℝ, uq_intro 5.
+icc_incl_in_real. ⊢ icc a b ⊆ ℝ, incl_intro 6.
+
+01. 1 ⊢ x ∈ ioo a b, hypo.
+02. 1 ⊢ x ∈ {x | x ∈ ℝ ∧ a < x ∧ x < b},
+  eq_subst ioo_eq 1, P t ↔ x ∈ t.
+03. 1 ⊢ x ∈ ℝ ∧ a < x ∧ x < b, comp_elim 2.
+04. 1 ⊢ x ∈ ℝ, conj_elimll 3.
+05. 1 ⊢ a < x, conj_elimlr 3.
+06. 1 ⊢ x < b, conj_elimr 3.
+07. 1 ⊢ a ≤ x, le_from_lt 5.
+08. 1 ⊢ x ≤ b, le_from_lt 6.
+09. 1 ⊢ x ∈ ℝ ∧ a ≤ x, conj_intro 4 7.
+10. 1 ⊢ x ∈ ℝ ∧ a ≤ x ∧ x ≤ b, conj_intro 9 8.
+11. 1 ⊢ set x, set_intro 4.
+12. 1 ⊢ x ∈ {x | x ∈ ℝ ∧ a ≤ x ∧ x ≤ b}, comp_intro 11 10.
+13. 1 ⊢ x ∈ icc a b, eq_subst_rev icc_eq 12, P t ↔ x ∈ t.
+14. ⊢ x ∈ ioo a b → x ∈ icc a b, subj_intro 13.
+15. ⊢ ∀x. x ∈ ioo a b → x ∈ icc a b, uq_intro 14.
+ioo_incl_in_icc. ⊢ ioo a b ⊆ icc a b, incl_intro 15.
+
+01. 1 ⊢ a ∈ ℝ, hypo.
+02. 2 ⊢ x ∈ ico a a, hypo.
+03. 2 ⊢ x ∈ ℝ ∧ a ≤ x ∧ x < a, ico_elim 2.
+04. 2 ⊢ x ∈ ℝ, conj_elimll 3.
+05. 2 ⊢ a ≤ x, conj_elimlr 3.
+06. 2 ⊢ x < a, conj_elimr 3.
+07. 1, 2 ⊢ a < a, rle_lt_trans 1 4 1 5 6.
+08. 1, 2 ⊢ ⊥, lt_self_contra 7.
+09. 1, 2 ⊢ x ∈ ∅, efq 8.
+10. 1 ⊢ x ∈ ico a a → x ∈ ∅, subj_intro 9.
+11. 1 ⊢ ∀x. x ∈ ico a a → x ∈ ∅, uq_intro 10.
+12. 1 ⊢ ico a a ⊆ ∅, incl_intro 11.
+13. ⊢ ∅ ⊆ ico a a, empty_set_is_least.
+14. 1 ⊢ ico a a = ∅, incl_antisym 12 13.
+ico_empty. ⊢ a ∈ ℝ → ico a a = ∅, subj_intro 14.
+
+01. 1 ⊢ x ∈ ℝ, hypo.
+02. 2 ⊢ y ∈ ℝ, hypo.
+03. 3 ⊢ a ≤ y, hypo.
+04. 4 ⊢ ico a x ⊆ ico a y, hypo.
+05. 5 ⊢ y < x, hypo.
+06. 2, 3, 5 ⊢ y ∈ ico a x, ico_intro 2 3 5.
+07. 2, 3, 4, 5 ⊢ y ∈ ico a y, incl_elim 4 6.
+08. 2, 3, 4, 5 ⊢ y ∈ ℝ ∧ a ≤ y ∧ y < y, ico_elim 7.
+09. 2, 3, 4, 5 ⊢ y < y, conj_elimr 8.
+10. 2, 3, 4, 5 ⊢ ⊥, lt_self_contra 9.
+11. 2, 3, 4 ⊢ ¬(y < x), neg_intro 10.
+12. 1, 2, 3, 4 ⊢ x ≤ y, rlt_neg 2 1 11.
+rle_from_ico_incl. ⊢ x ∈ ℝ → y ∈ ℝ → a ≤ y →
+  ico a x ⊆ ico a y → x ≤ y, subj_intro_iv 12.
 
 
 (*/note real_decl Declares the <i>set of real numbers</i> to be a
