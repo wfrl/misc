@@ -1,0 +1,111 @@
+
+(*/chapter Main proof *)
+
+01. 1 ⊢ ¬◇∃x. x ∈ G, hypo.
+02. ⊢ ◇(∃x. x ∈ G) ↔ ¬□¬∃x. x ∈ G, pos_equi.
+03. ⊢ ¬◇(∃x. x ∈ G) ↔ ¬¬□¬∃x. x ∈ G, equi_cong_neg 2.
+04. 1 ⊢ ¬¬□¬∃x. x ∈ G, lsubj_elim 3 1.
+05. 1 ⊢ □¬∃x. x ∈ G, dne 4.
+06. 6 ⊢ ¬∃x. x ∈ G, hypo.
+07. 6 ⊢ ∀x. ¬(x ∈ G), neg_ex 6.
+08. ⊢ (¬∃x. x ∈ G) → ∀x. ¬(x ∈ G), subj_intro 7.
+09. ⊢ □((¬∃x. x ∈ G) → ∀x. ¬(x ∈ G)), nec 8.
+10. ⊢ □(¬∃x. x ∈ G) → □∀x. ¬(x ∈ G), K 9.
+11. 1 ⊢ □∀x. ¬(x ∈ G), subj_elim 10 5.
+
+12. 12 ⊢ ∀x. ¬(x ∈ G), hypo.
+13. 12 ⊢ ¬(x ∈ G), uq_elim 12.
+14. 14 ⊢ x ∈ G, hypo.
+15. 12, 14 ⊢ ⊥, neg_elim 13 14.
+16. 12, 14 ⊢ x ∈ B, efq 15.
+17. 12 ⊢ x ∈ G → x ∈ B, subj_intro 16.
+18. 12 ⊢ ∀x. x ∈ G → x ∈ B, uq_intro 17.
+19. ⊢ (∀x. ¬(x ∈ G)) → (∀x. x ∈ G → x ∈ B), subj_intro 18.
+20. ⊢ □((∀x. ¬(x ∈ G)) → (∀x. x ∈ G → x ∈ B)), nec 19.
+21. ⊢ □(∀x. ¬(x ∈ G)) → □(∀x. x ∈ G → x ∈ B), K 20.
+22. 1 ⊢ □(∀x. x ∈ G → x ∈ B), subj_elim 21 11.
+
+23. ⊢ G ∈ P, axiom_iii.
+24. 1 ⊢ B ∈ P, axiom_ii 23 22.
+25. 1 ⊢ ∅ ∈ P, 24.
+26. ⊢ ∅ ∈ P ↔ ¬(compl ∅ ∈ P), axiom_i.
+27. 1 ⊢ ¬(compl ∅ ∈ P), lsubj_elim 26 25.
+28. 1 ⊢ ¬(Univ ∈ P),
+  eq_subst compl_empty_set 27, Q t ↔ ¬(t ∈ P).
+29. 1 ⊢ Univ ∈ P, 24.
+30. 1 ⊢ ⊥, neg_elim 28 29.
+31. ⊢ ¬¬◇∃x. x ∈ G, neg_intro 30.
+God_exists_possibly. ⊢ ◇∃x. x ∈ G, dne 31.
+
+01. 1 ⊢ x ∈ G, hypo.
+02. 2 ⊢ x ∈ A, hypo.
+03. 3 ⊢ ¬(A ∈ P), hypo.
+04. ⊢ A ∈ P ↔ ¬(compl A ∈ P), axiom_i.
+05. ⊢ ¬(A ∈ P) ↔ ¬¬(compl A ∈ P), equi_cong_neg 4.
+06. 3 ⊢ ¬¬(compl A ∈ P), lsubj_elim 5 3.
+07. 3 ⊢ compl A ∈ P, dne 6.
+08. 1 ⊢ x ∈ {x | x ∈ Univ ∧ ∀A. A ∈ P → x ∈ A}, eq_subst G_eq 1.
+09. 1 ⊢ x ∈ Univ ∧ ∀A. A ∈ P → x ∈ A, sep_elim 8.
+10. 1 ⊢ ∀A. A ∈ P → x ∈ A, conj_elimr 9.
+11. 1 ⊢ compl A ∈ P → x ∈ compl A, uq_elim 10.
+12. 1, 3 ⊢ x ∈ compl A, subj_elim 11 7.
+13. 1, 3 ⊢ x ∈ Univ ∧ ¬(x ∈ A), compl_elim 12.
+14. 1, 3 ⊢ ¬(x ∈ A), conj_elimr 13.
+15. 1, 2, 3 ⊢ ⊥, neg_elim 14 2.
+16. 1, 2 ⊢ ¬¬(A ∈ P), neg_intro 15.
+17. 1, 2 ⊢ A ∈ P, dne 16.
+18. 1 ⊢ x ∈ A → A ∈ P, subj_intro 17.
+God_has_only_positive_properties. ⊢
+  x ∈ G → x ∈ A → A ∈ P, subj_intro 18.
+
+01. 1 ⊢ A ∈ P, hypo.
+02. 2 ⊢ x ∈ G, hypo.
+03. 2 ⊢ x ∈ {x | x ∈ Univ ∧ ∀A. A ∈ P → x ∈ A}, eq_subst G_eq 2.
+04. 2 ⊢ x ∈ Univ ∧ ∀A. A ∈ P → x ∈ A, sep_elim 3.
+05. 2 ⊢ ∀A. A ∈ P → x ∈ A, conj_elimr 4.
+06. 2 ⊢ A ∈ P → x ∈ A, uq_elim 5.
+07. 1, 2 ⊢ x ∈ A, subj_elim 6 1.
+08. 1 ⊢ x ∈ G → x ∈ A, subj_intro 7.
+09. 1 ⊢ ∀x. x ∈ G → x ∈ A, uq_intro 8.
+God_has_any_positive_property. ⊢
+  A ∈ P → ∀x. x ∈ G → x ∈ A, subj_intro 9.
+
+01. 1 ⊢ x ∈ G, hypo.
+02. 2 ⊢ x ∈ A, hypo.
+03. 1, 2 ⊢ A ∈ P, God_has_only_positive_properties 1 2.
+04. 1, 2 ⊢ □(A ∈ P), axiom_iv 3.
+05. ⊢ □(A ∈ P → ∀y. y ∈ G → y ∈ A),
+  nec God_has_any_positive_property.
+06. ⊢ □(A ∈ P) → □∀y. y ∈ G → y ∈ A, K 5.
+07. 1, 2 ⊢ □∀y. y ∈ G → y ∈ A, subj_elim 6 4.
+08. 1 ⊢ x ∈ A → □∀y. y ∈ G → y ∈ A, subj_intro 7.
+09. 1 ⊢ ∀A. x ∈ A → □∀y. y ∈ G → y ∈ A, uq_intro 8.
+10. 1 ⊢ x ∈ G ∧ ∀A. x ∈ A → □∀y. y ∈ G → y ∈ A, conj_intro 1 9.
+11. ⊢ ess G x ↔ x ∈ G ∧ ∀A. x ∈ A → □∀y. y ∈ G → y ∈ A, ess_equi.
+12. 1 ⊢ ess G x, rsubj_elim 11 10.
+God_is_essentially_God_like. ⊢
+  x ∈ G → ess G x, subj_intro 12.
+
+01. 1 ⊢ ∃x. x ∈ G, hypo.
+02. 2 ⊢ x ∈ G, hypo.
+03. 2 ⊢ ess G x, God_is_essentially_God_like 2.
+04. 2 ⊢ x ∈ {x | x ∈ Univ ∧ ∀A. A ∈ P → x ∈ A}, eq_subst G_eq 2.
+05. 2 ⊢ x ∈ Univ ∧ ∀A. A ∈ P → x ∈ A, sep_elim 4.
+06. 2 ⊢ ∀A. A ∈ P → x ∈ A, conj_elimr 5.
+07. 2 ⊢ NE ∈ P → x ∈ NE, uq_elim 6.
+08. 2 ⊢ x ∈ NE, subj_elim 7 axiom_v.
+09. 2 ⊢ x ∈ {x | x ∈ Univ ∧ ∀E. ess E x → □∃y. y ∈ E},
+  eq_subst NE_eq 8.
+10. 2 ⊢ x ∈ Univ ∧ ∀E. ess E x → □∃y. y ∈ E, sep_elim 9.
+11. 2 ⊢ ∀E. ess E x → □∃y. y ∈ E, conj_elimr 10.
+12. 2 ⊢ ess G x → □∃y. y ∈ G, uq_elim 11.
+13. 2 ⊢ □∃y. y ∈ G, subj_elim 12 3.
+14. 1 ⊢ □∃y. y ∈ G, ex_elim 1 13.
+if_God_exists_then_nec. ⊢ (∃x. x ∈ G) → □∃y. y ∈ G,
+  subj_intro 14.
+
+01. ⊢ (∃x. x ∈ G) → □∃x. x ∈ G, if_God_exists_then_nec.
+02. ⊢ □((∃x. x ∈ G) → □∃x. x ∈ G), nec 1.
+03. ⊢ ◇∃x. x ∈ G, God_exists_possibly.
+God_exists. ⊢ □∃x. x ∈ G, KB_lemma_ii 1 2 3.
+

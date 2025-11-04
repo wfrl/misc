@@ -1,0 +1,48 @@
+
+(*/chapter Set theory lemmata *)
+
+sep_elim. ⊢ u ∈ {x | x ∈ A ∧ Q x} → u ∈ A ∧ Q u,
+  bij_eliml separation.
+
+01. 1 ⊢ u ∈ A, hypo.
+02. 2 ⊢ Q u, hypo.
+03. 1, 2 ⊢ u ∈ A ∧ Q u, conj_intro 1 2.
+04. 1, 2 ⊢ u ∈ {x | x ∈ A ∧ Q x}, rsubj_elim separation 3.
+05. 1 ⊢ Q u → u ∈ {x | x ∈ A ∧ Q x}, subj_intro 4.
+sep_intro. ⊢ u ∈ A → Q u → u ∈ {x | x ∈ A ∧ Q x},
+  subj_intro 5.
+
+01. 1 ⊢ x ∈ compl A, hypo.
+02. 1 ⊢ x ∈ {x | x ∈ Univ ∧ ¬(x ∈ A)},
+  eq_subst compl_eq 1, Q t ↔ x ∈ t.
+03. 1 ⊢ x ∈ Univ ∧ ¬(x ∈ A), sep_elim 2.
+compl_elim. ⊢ x ∈ compl A → x ∈ Univ ∧ ¬(x ∈ A),
+  subj_intro 3.
+
+01. 1 ⊢ x ∈ Univ, hypo.
+02. 2 ⊢ ¬(x ∈ A), hypo.
+03. 1, 2 ⊢ x ∈ {x | x ∈ Univ ∧ ¬(x ∈ A)}, sep_intro 1 2.
+04. 1, 2 ⊢ x ∈ compl A, eq_subst_rev compl_eq 3, Q t ↔ x ∈ t.
+05. 1 ⊢ ¬(x ∈ A) → x ∈ compl A, subj_intro 4.
+compl_intro. ⊢ x ∈ Univ → ¬(x ∈ A) → x ∈ compl A,
+  subj_intro 5.
+
+01. 1 ⊢ x ∈ ∅, hypo.
+02. 1 ⊢ x ∈ {x | x ∈ Univ ∧ ⊥}, eq_subst empty_set_eq 1.
+03. 1 ⊢ x ∈ Univ ∧ ⊥, sep_elim 2.
+04. 1 ⊢ ⊥, conj_elimr 3.
+empty_contra. ⊢ x ∈ ∅ → ⊥, subj_intro 4.
+
+01. 1 ⊢ x ∈ compl ∅, hypo.
+02. 1 ⊢ x ∈ Univ ∧ ¬(x ∈ ∅), compl_elim 1.
+03. 1 ⊢ x ∈ Univ, conj_eliml 2.
+04. ⊢ x ∈ compl ∅ → x ∈ Univ, subj_intro 3.
+05. 5 ⊢ x ∈ Univ, hypo.
+06. 6 ⊢ x ∈ ∅, hypo.
+07. 6 ⊢ ⊥, empty_contra 6.
+08. ⊢ ¬(x ∈ ∅), neg_intro 7.
+09. 5 ⊢ x ∈ compl ∅, compl_intro 5 8.
+10. ⊢ x ∈ Univ → x ∈ compl ∅, subj_intro 9.
+11. ⊢ x ∈ compl ∅ ↔ x ∈ Univ, bij_intro 4 10.
+12. ⊢ ∀x. x ∈ compl ∅ ↔ x ∈ Univ, uq_intro 11.
+compl_empty_set. ⊢ compl ∅ = Univ, extensionality 12.

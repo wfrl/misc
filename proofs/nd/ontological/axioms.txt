@@ -1,0 +1,77 @@
+
+(*/title Gödel's ontological argument *)
+(*/dir ontological-argument *)
+
+(*/chapter Rules and axioms *)
+
+(*/section Natural deduction inference rules *)
+
+(*/rules hypo conj_intro conj_eliml conj_elimr disj_introl disj_intror
+disj_elim subj_intro subj_elim neg_intro neg_elim bij_intro bij_eliml
+bij_elimr uq_intro uq_elim ex_intro ex_elim nec *)
+
+hypo. (⊤ ∧ A ⊢ A), axiom.
+conj_intro. (H1 ⊢ A) → (H2 ⊢ B) → (H1 ∧ H2 ⊢ A ∧ B), axiom.
+conj_eliml. (H ⊢ A ∧ B) → (H ⊢ A), axiom.
+conj_elimr. (H ⊢ A ∧ B) → (H ⊢ B), axiom.
+disj_introl. (H ⊢ A) → (H ⊢ A ∨ B), axiom.
+disj_intror. (H ⊢ B) → (H ⊢ A ∨ B), axiom.
+disj_elim. (H1 ⊢ A ∨ B) → (H2 ∧ A ⊢ C) → (H3 ∧ B ⊢ C) →
+  (H1 ∧ H2 ∧ H3 ⊢ C), axiom.
+subj_intro. (H ∧ A ⊢ B) → (H ⊢ A → B), axiom.
+subj_elim. (H1 ⊢ A → B) → (H2 ⊢ A) → (H1 ∧ H2 ⊢ B), axiom.
+neg_intro. (H ∧ A ⊢ ⊥) → (H ⊢ ¬A), axiom.
+neg_elim. (H1 ⊢ ¬A) → (H2 ⊢ A) → (H1 ∧ H2 ⊢ ⊥), axiom.
+bij_intro. (H1 ⊢ A → B) → (H2 ⊢ B → A) → (H1 ∧ H2 ⊢ A ↔ B), axiom.
+bij_eliml. (H ⊢ A ↔ B) → (H ⊢ A → B), axiom.
+bij_elimr. (H ⊢ A ↔ B) → (H ⊢ B → A), axiom.
+uq_intro. (nf u (H ∧ ∀x. Q x)) → (H ⊢ Q u) → (H ⊢ ∀x. Q x), axiom.
+uq_elim. (H ⊢ ∀x. Q x) → (H ⊢ Q t), axiom.
+ex_intro. (H ⊢ Q t) → (H ⊢ ∃x. Q x), axiom.
+ex_elim. (nf u (H1 ∧ H2 ∧ B ∧ ∃x. Q x)) →
+  (H1 ⊢ ∃x. Q x) → (H2 ∧ Q u ⊢ B) → (H1 ∧ H2 ⊢ B), axiom.
+nec. (⊢ A) → (⊢ □A), axiom.
+
+
+(*/section Axioms of classical propositional logic *)
+
+efq. ⊢ ⊥ → A, axiom.
+lem. ⊢ A ∨ ¬A, axiom.
+
+
+(*/section Axioms of equality *)
+
+eq_refl. ⊢ x = x, axiom.
+eq_subst. ⊢ x = y → Q x → Q y, axiom.
+
+
+(*/section Axioms of modal logic KB *)
+
+pos_equi. ⊢ ◇A ↔ ¬□¬A, axiom.
+K. ⊢ □(A → B) → □A → □B, axiom.
+B. ⊢ A → □◇A, axiom.
+
+
+(*/section Needed axioms of ZF set theory *)
+
+element_decl. ⊢ x ∈ A ↔ _, decl.
+univ_decl. ⊢ Univ = _, decl.
+empty_set_eq. ⊢ ∅ = {x | x ∈ Univ ∧ ⊥}, def.
+compl_eq. ⊢ compl A = {x | x ∈ Univ ∧ ¬(x ∈ A)}, def.
+
+extensionality. ⊢ (∀x. x ∈ A ↔ x ∈ B) → A = B, axiom.
+separation. ⊢ u ∈ {x | x ∈ A ∧ Q x} ↔ u ∈ A ∧ Q u, axiom.
+
+
+(*/section Scott's variant of Gödel's axioms *)
+
+positive_decl. ⊢ P = _, decl.
+G_eq. ⊢ G = {x | x ∈ Univ ∧ ∀A. A ∈ P → x ∈ A}, def.
+ess_equi. ⊢ ess E x ↔ x ∈ E ∧ ∀A. x ∈ A → □∀y. y ∈ E → y ∈ A, def.
+NE_eq. ⊢ NE = {x | x ∈ Univ ∧ ∀E. ess E x → □∃y. y ∈ E}, def.
+
+axiom_i. ⊢ A ∈ P ↔ ¬(compl A ∈ P), axiom.
+axiom_ii. ⊢ A ∈ P → □(∀x. x ∈ A → x ∈ B) → B ∈ P, axiom.
+axiom_iii. ⊢ G ∈ P, axiom.
+axiom_iv. ⊢ A ∈ P → □(A ∈ P), axiom.
+axiom_v. ⊢ NE ∈ P, axiom.
