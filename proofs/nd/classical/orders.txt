@@ -3,49 +3,171 @@
 
 (*/section General concepts *)
 
-is_max_equi. ⊢ is_max R y A ↔ y ∈ A ∧ ∀x. x ∈ A → R x y, def.
-is_min_equi. ⊢ is_min R y A ↔ y ∈ A ∧ ∀x. x ∈ A → R y x, def.
+is_max_equi. ⊢ is_max R y A ↔ y ∈ A ∧ ∀x. x ∈ A → (x, y) ∈ R, def.
+is_min_equi. ⊢ is_min R y A ↔ y ∈ A ∧ ∀x. x ∈ A → (y, x) ∈ R, def.
 
 is_supremum_equi. ⊢ is_supremum R M y A ↔
-  (∀x. x ∈ A → R x y) ∧
-  (∀b. b ∈ M → (∀x. x ∈ A → R x b) → R y b), def.
+  (∀x. x ∈ A → (x, y) ∈ R) ∧
+  (∀b. b ∈ M → (∀x. x ∈ A → (x, b) ∈ R) → (y, b) ∈ R), def.
 
 is_infimum_equi. ⊢ is_infimum R M y A ↔
-  (∀x. x ∈ A → R y x) ∧
-  (∀b. b ∈ M → (∀x. x ∈ A → R b x) → R b y), def.
+  (∀x. x ∈ A → (y, x) ∈ R) ∧
+  (∀b. b ∈ M → (∀x. x ∈ A → (b, x) ∈ R) → (b, y) ∈ R), def.
+
+is_supremum_unfold. ⊢ is_supremum R M y A →
+  (∀x. x ∈ A → (x, y) ∈ R) ∧
+  (∀b. b ∈ M → (∀x. x ∈ A → (x, b) ∈ R) → (y, b) ∈ R),
+  bij_eliml is_supremum_equi.
+
+01. 1 ⊢ ∀x. x ∈ A → (x, y) ∈ R, hypo.
+02. 2 ⊢ ∀b. b ∈ M → (∀x. x ∈ A → (x, b) ∈ R) → (y, b) ∈ R, hypo.
+03. 1, 2 ⊢ (∀x. x ∈ A → (x, y) ∈ R) ∧
+  (∀b. b ∈ M → (∀x. x ∈ A → (x, b) ∈ R) → (y, b) ∈ R), conj_intro 1 2.
+05. 1, 2 ⊢ is_supremum R M y A, rsubj_elim is_supremum_equi 3.
+is_supremum_intro. ⊢ (∀x. x ∈ A → (x, y) ∈ R) →
+  (∀b. b ∈ M → (∀x. x ∈ A → (x, b) ∈ R) → (y, b) ∈ R) →
+  is_supremum R M y A, subj_intro_ii 5.
+
+01. 1 ⊢ A ⊆ B, hypo.
+02. 2 ⊢ b ∈ M, hypo.
+03. 3 ⊢ is_supremum R M a A, hypo.
+04. 4 ⊢ is_supremum R M b B, hypo.
+05. 3 ⊢ (∀x. x ∈ A → (x, a) ∈ R) ∧
+  (∀z. z ∈ M → (∀x. x ∈ A → (x, z) ∈ R) → (a, z) ∈ R),
+  is_supremum_unfold 3.
+06. 4 ⊢ (∀x. x ∈ B → (x, b) ∈ R) ∧
+  (∀z. z ∈ M → (∀x. x ∈ B → (x, z) ∈ R) → (b, z) ∈ R),
+  is_supremum_unfold 4.
+07. 7 ⊢ x ∈ A, hypo.
+08. 1, 7 ⊢ x ∈ B, incl_elim 1 7.
+09. 4 ⊢ ∀x. x ∈ B → (x, b) ∈ R, conj_eliml 6.
+10. 1, 4, 7 ⊢ (x, b) ∈ R, uq_bounded_elim 9 8.
+11. 1, 4 ⊢ x ∈ A → (x, b) ∈ R, subj_intro 10.
+12. 1, 4 ⊢ ∀x. x ∈ A → (x, b) ∈ R, uq_intro 11.
+13. 3 ⊢ ∀z. z ∈ M → (∀x. x ∈ A → (x, z) ∈ R) → (a, z) ∈ R,
+  conj_elimr 5.
+14. 2, 3 ⊢ (∀x. x ∈ A → (x, b) ∈ R) → (a, b) ∈ R,
+  uq_bounded_elim 13 2.
+15. 1, 2, 3, 4 ⊢ (a, b) ∈ R, subj_elim 14 12.
+supremum_is_monotonic. ⊢ A ⊆ B → b ∈ M →
+  is_supremum R M a A → is_supremum R M b B →
+  (a, b) ∈ R, subj_intro_iv 15.
 
 
 (*/section Partial orders *)
 
 po_equi. ⊢ partial_order R M ↔
-  (∀x. x ∈ M → R x x) ∧
-  (∀x. ∀y. x ∈ M → y ∈ M → R x y → R y x → x = y) ∧
-  (∀x. ∀y. ∀z. x ∈ M → y ∈ M → z ∈ M → R x y → R y z → R x z), def.
+  (∀x. x ∈ M → (x, x) ∈ R) ∧
+  (∀x. ∀y. x ∈ M → y ∈ M → (x, y) ∈ R → (y, x) ∈ R → x = y) ∧
+  (∀x. ∀y. ∀z. x ∈ M → y ∈ M → z ∈ M →
+    (x, y) ∈ R → (y, z) ∈ R → (x, z) ∈ R), def.
 
 01. 1 ⊢ partial_order R M, hypo.
-02. 1 ⊢ ∀x. x ∈ M → R x x, lsubj_conj_elimll po_equi 1.
-03. 1 ⊢ x ∈ M → R x x, uq_elim 2.
-po_refl. ⊢ partial_order R M → x ∈ M → R x x, subj_intro 3.
+02. 1 ⊢ ∀x. x ∈ M → (x, x) ∈ R, lsubj_conj_elimll po_equi 1.
+03. 1 ⊢ x ∈ M → (x, x) ∈ R, uq_elim 2.
+po_refl. ⊢ partial_order R M → x ∈ M → (x, x) ∈ R, subj_intro 3.
 
 01. 1 ⊢ partial_order R M, hypo.
-02. 1 ⊢ ∀x. ∀y. x ∈ M → y ∈ M → R x y → R y x → x = y,
+02. 1 ⊢ ∀x. ∀y. x ∈ M → y ∈ M → (x, y) ∈ R → (y, x) ∈ R → x = y,
   lsubj_conj_elimlr po_equi 1.
-03. 1 ⊢ ∀y. x ∈ M → y ∈ M → R x y → R y x → x = y, uq_elim 2.
-04. 1 ⊢ x ∈ M → y ∈ M → R x y → R y x → x = y, uq_elim 3.
+03. 1 ⊢ ∀y. x ∈ M → y ∈ M → (x, y) ∈ R → (y, x) ∈ R → x = y, uq_elim 2.
+04. 1 ⊢ x ∈ M → y ∈ M → (x, y) ∈ R → (y, x) ∈ R → x = y, uq_elim 3.
 po_antisym. ⊢ partial_order R M → x ∈ M → y ∈ M →
-  R x y → R y x → x = y, subj_intro 4.
+  (x, y) ∈ R → (y, x) ∈ R → x = y, subj_intro 4.
 
 01. 1 ⊢ partial_order R M, hypo.
 02. 1 ⊢ ∀x. ∀y. ∀z. x ∈ M → y ∈ M → z ∈ M →
-  R x y → R y z → R x z, lsubj_conj_elimr po_equi 1.
+  (x, y) ∈ R → (y, z) ∈ R → (x, z) ∈ R, lsubj_conj_elimr po_equi 1.
 03. 1 ⊢ ∀y. ∀z. x ∈ M → y ∈ M → z ∈ M →
-  R x y → R y z → R x z, uq_elim 2.
+  (x, y) ∈ R → (y, z) ∈ R → (x, z) ∈ R, uq_elim 2.
 04. 1 ⊢ ∀z. x ∈ M → y ∈ M → z ∈ M →
-  R x y → R y z → R x z, uq_elim 3.
+  (x, y) ∈ R → (y, z) ∈ R → (x, z) ∈ R, uq_elim 3.
 05. 1 ⊢ x ∈ M → y ∈ M → z ∈ M →
-  R x y → R y z → R x z, uq_elim 4.
+  (x, y) ∈ R → (y, z) ∈ R → (x, z) ∈ R, uq_elim 4.
 po_trans. ⊢ partial_order R M → x ∈ M → y ∈ M → z ∈ M →
-  R x y → R y z → R x z, subj_intro 5.
+  (x, y) ∈ R → (y, z) ∈ R → (x, z) ∈ R, subj_intro 5.
+
+01. 1 ⊢ is_supremum R M a A, hypo.
+02. 2 ⊢ is_supremum R M b B, hypo.
+03. 3 ⊢ is_supremum R M c (A ∪ B), hypo.
+04. 4 ⊢ a ∈ M, hypo.
+05. 5 ⊢ b ∈ M, hypo.
+06. 6 ⊢ c ∈ M, hypo.
+07. 4 ⊢ set a, set_intro 4.
+08. 5 ⊢ set b, set_intro 5.
+09. 1 ⊢ (∀x. x ∈ A → (x, a) ∈ R) ∧
+  (∀z. z ∈ M → (∀x. x ∈ A → (x, z) ∈ R) → (a, z) ∈ R),
+  is_supremum_unfold 1.
+10. 2 ⊢ (∀x. x ∈ B → (x, b) ∈ R) ∧
+  (∀z. z ∈ M → (∀x. x ∈ B → (x, z) ∈ R) → (b, z) ∈ R),
+  is_supremum_unfold 2.
+11. 3 ⊢ (∀x. x ∈ A ∪ B → (x, c) ∈ R) ∧
+  (∀z. z ∈ M → (∀x. x ∈ A ∪ B → (x, z) ∈ R) → (c, z) ∈ R),
+  is_supremum_unfold 3.
+
+12. 12 ⊢ x ∈ {a, b}, hypo.
+13. 4, 5, 12 ⊢ x = a ∨ x = b, pair_set_elim 7 8 12.
+14. 14 ⊢ x = a, hypo.
+15. ⊢ A ⊆ A ∪ B, union_incl_left.
+16. 1, 3, 6 ⊢ (a, c) ∈ R, supremum_is_monotonic 15 6 1 3.
+17. 1, 3, 6, 14 ⊢ (x, c) ∈ R, eq_subst_rev 14 16.
+18. 18 ⊢ x = b, hypo.
+19. ⊢ B ⊆ A ∪ B, union_incl_right.
+20. 2, 3, 6 ⊢ (b, c) ∈ R, supremum_is_monotonic 19 6 2 3.
+21. 2, 3, 6, 18 ⊢ (x, c) ∈ R, eq_subst_rev 18 20.
+22. 1, 2, 3, 4, 5, 6, 12 ⊢ (x, c) ∈ R, disj_elim 13 17 21.
+23. 1, 2, 3, 4, 5, 6 ⊢ x ∈ {a, b} → (x, c) ∈ R, subj_intro 22.
+24. 1, 2, 3, 4, 5, 6 ⊢ ∀x. x ∈ {a, b} → (x, c) ∈ R, uq_intro 23.
+
+25. 25 ⊢ partial_order R M, hypo.
+26. 26 ⊢ A ⊆ M, hypo.
+27. 27 ⊢ B ⊆ M, hypo.
+28. 28 ⊢ x ∈ M, hypo.
+29. 29 ⊢ ∀z. z ∈ {a, b} → (z, x) ∈ R, hypo.
+30. 30 ⊢ z ∈ A ∪ B, hypo.
+31. 30 ⊢ z ∈ A ∨ z ∈ B, union_elim 30.
+
+32. 32 ⊢ z ∈ A, hypo.
+33. 1 ⊢ ∀x. x ∈ A → (x, a) ∈ R, conj_eliml 9.
+34. 1, 32 ⊢ (z, a) ∈ R, uq_bounded_elim 33 32.
+35. 4 ⊢ a ∈ {a, b}, in21 7.
+36. 4, 29 ⊢ (a, x) ∈ R, uq_bounded_elim 29 35.
+37. 26, 32 ⊢ z ∈ M, incl_elim 26 32.
+38. 1, 4, 25, 26, 28, 29, 32 ⊢ (z, x) ∈ R, po_trans 25 37 4 28 34 36.
+
+39. 39 ⊢ z ∈ B, hypo.
+40. 2 ⊢ ∀x. x ∈ B → (x, b) ∈ R, conj_eliml 10.
+41. 2, 39 ⊢ (z, b) ∈ R, uq_bounded_elim 40 39.
+42. 5 ⊢ b ∈ {a, b}, in22 8.
+43. 5, 29 ⊢ (b, x) ∈ R, uq_bounded_elim 29 42.
+44. 27, 39 ⊢ z ∈ M, incl_elim 27 39.
+45. 2, 5, 25, 27, 28, 29, 39 ⊢ (z, x) ∈ R, po_trans 25 44 5 28 41 43.
+
+46. 1, 2, 4, 5, 25, 26, 27, 28, 29, 30 ⊢ (z, x) ∈ R, disj_elim 31 38 45.
+47. 1, 2, 4, 5, 25, 26, 27, 28, 29 ⊢ z ∈ A ∪ B → (z, x) ∈ R, subj_intro 46.
+48. 1, 2, 4, 5, 25, 26, 27, 28, 29 ⊢ ∀z. z ∈ A ∪ B → (z, x) ∈ R, uq_intro 47.
+49. 3 ⊢ ∀x. x ∈ M → (∀z. z ∈ A ∪ B → (z, x) ∈ R) → (c, x) ∈ R, conj_elimr 11.
+50. 3, 28 ⊢ (∀z. z ∈ A ∪ B → (z, x) ∈ R) → (c, x) ∈ R, uq_bounded_elim 49 28.
+51. 1, 2, 3, 4, 5, 25, 26, 27, 28, 29 ⊢ (c, x) ∈ R, subj_elim 50 48.
+52. 1, 2, 3, 4, 5, 25, 26, 27 ⊢ x ∈ M →
+  (∀z. z ∈ {a, b} → (z, x) ∈ R) → (c, x) ∈ R, subj_intro_ii 51.
+53. 1, 2, 3, 4, 5, 25, 26, 27 ⊢ ∀x. x ∈ M →
+  (∀z. z ∈ {a, b} → (z, x) ∈ R) → (c, x) ∈ R, uq_intro 52.
+
+54. 25, 26, 27, 4, 5, 6, 1, 2, 3 ⊢ is_supremum R M c {a, b},
+  is_supremum_intro 24 53.
+55. 25, 26, 27, 4, 5, 6 ⊢ is_supremum R M a A → is_supremum R M b B →
+  is_supremum R M c (A ∪ B) → is_supremum R M c {a, b},
+  subj_intro_iii 54.
+56. 25, 26, 27 ⊢ a ∈ M → b ∈ M → c ∈ M →
+  is_supremum R M a A → is_supremum R M b B →
+  is_supremum R M c (A ∪ B) → is_supremum R M c {a, b},
+  subj_intro_iii 55.
+supremum_union. ⊢ partial_order R M → A ⊆ M → B ⊆ M →
+  a ∈ M → b ∈ M → c ∈ M →
+  is_supremum R M a A → is_supremum R M b B →
+  is_supremum R M c (A ∪ B) → is_supremum R M c {a, b},
+  subj_intro_iii 56.
 
 
 (*/section Power set lattice *)

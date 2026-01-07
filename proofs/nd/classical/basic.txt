@@ -1056,6 +1056,20 @@ sg_neg_intro. ⊢ set y → ¬x = y → ¬x ∈ {y}, subj_intro_ii 6.
 sg_incl_in. ⊢ x ∈ A → {x} ⊆ A, subj_intro 9.
 
 01. 1 ⊢ set a, hypo.
+02. 2 ⊢ set b, hypo.
+03. 3 ⊢ x ∈ {a, b}, hypo.
+04. 3 ⊢ x ∈ {a} ∨ x ∈ {b}, union_elim 3.
+05. 5 ⊢ x ∈ {a}, hypo.
+06. 1, 5 ⊢ x = a, sg_elim 1 5.
+07. 1, 5 ⊢ x = a ∨ x = b, disj_introl 6.
+08. 8 ⊢ x ∈ {b}, hypo.
+09. 2, 8 ⊢ x = b, sg_elim 2 8.
+10. 2, 8 ⊢ x = a ∨ x = b, disj_intror 9.
+11. 1, 2, 3 ⊢ x = a ∨ x = b, disj_elim 4 7 10.
+pair_set_elim. ⊢ set a → set b → x ∈ {a, b} → x = a ∨ x = b,
+  subj_intro_iii 11.
+
+01. 1 ⊢ set a, hypo.
 02. 2 ⊢ x ∈ ⋂{a}, hypo.
 03. ⊢ a = a, eq_refl.
 04. 1 ⊢ a ∈ {a}, sg_intro 1 3.
