@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # ======================================================================
 # Transposer tool for musical notation
-# Version 2026-01-09
+# Version 2026-01-10
 #
 # This utility provides a graphical user interface for transposing
 # musical notation written in LilyPond format. It processes raw text,
@@ -32,12 +32,12 @@ OUTPUT_MAPPINGS = [
 ]
 
 BASE_ALIASES = {
-    "c": 0, "bis": 0, "deses": 0, "cis": 1, "des": 1,
-    "d": 2, "cisis": 2, "eses": 2, "dis": 3, "es": 3, "aeses": 7,
+    "c": 0, "deses": 0, "cis": 1, "des": 1, "d": 2, "cisis": 2,
+    "eeses": 2, "eses": 2, "dis": 3, "es": 3, "ees": 3, "feses": 3,
     "e": 4, "fes": 4, "disis": 4, "f": 5, "eis": 5, "geses": 5,
-    "fis": 6, "ges": 6, "g": 7, "fisis": 7, "gis": 8, "as": 8, "aes": 8,
-    "a": 9, "gisis": 9, "heses": 9, "ais": 10, "bes": 10,
-    "ces": 11, "aisis": 11
+    "fis": 6, "ges": 6, "aeses": 7, "ases": 7, "asas": 7, "g": 7,
+    "fisis": 7, "gis": 8, "as": 8, "aes": 8, "a": 9, "gisis": 9,
+    "ais": 10, "ceses": 10, "ces": 11, "aisis": 11
 }
 
 # c cs d ds e f fs g gs a as b
@@ -108,11 +108,17 @@ class Transposer:
     def __init__(self, input_mode="en", target_mapping=None):
         self.input_aliases = BASE_ALIASES.copy()
         if input_mode == "de":
+            self.input_aliases["heses"] = 9
             self.input_aliases["b"] = 10
             self.input_aliases["h"] = 11
+            self.input_aliases["his"] = 0
+            self.input_aliases["hisis"] = 1
         else:
+            self.input_aliases["beses"] = 9
             self.input_aliases["bes"] = 10
             self.input_aliases["b"] = 11
+            self.input_aliases["bis"] = 0
+            self.input_aliases["bisis"] = 1
 
         self.target = (target_mapping or
             ["c", "cis", "d", "dis", "e", "f", "fis", "g", "gis", "a", "ais", "b"])
@@ -135,7 +141,6 @@ class Transposer:
         return name + ("'" * oct_off if oct_off > 0 else "," * abs(oct_off))
 
     def transpose(self, text, delta):
-        if delta == 0: return text
         return self.pattern.sub(lambda m: m.group("comment") if m.group("comment") else 
             self._val_to_pitch(self._get_semitones(m.group("note")) + delta), text)
 

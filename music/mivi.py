@@ -3,7 +3,7 @@
 # Mivi -- Ein MIDI-Synthesizer und -Visualizer
 # ======================================================================
 #
-# Version vom 7. Januar 2026.
+# Version vom 10. Januar 2026.
 #
 # BESCHREIBUNG:
 # Dieses Programm liest Standard-MIDI-Dateien (.mid), parst deren
@@ -12,15 +12,17 @@
 # Audio-Spur generiert und synchron zur Grafik abgespielt.
 #
 # VERWENDUNG:
-#   python3 mivi.py [dateiname.mid] [optionen]
+#   ./mivi.py [optionen] dateiname.mid [out.wav]
 #
 # ARGUMENTE:
-#   dateiname.mid   : Pfad zur MIDI-Datei (Standard: test.mid).
+#   dateiname.mid   : Pfad zur MIDI-Datei.
+#   out.wav         : Optional die Ausgabe in diese Datei schreiben.
 #   -tm, --timidity : Nutzt das externe Tool 'timidity' für die
 #                     Audio-Erzeugung (bessere Qualität, erfordert
 #                     Installation).
-#   -b, --bpm       : Erzwingt eine feste BPM-Rate (überschreibt
-#                     Tempo-Events der Datei).
+#   -b, --bpm       : Erzwingt eine feste BPM-Rate (statt die
+#                     Tempo-Events der Datei zu befolgen).
+#   -u, --use       : out.wav nicht schreiben, sondern verwenden.
 #
 # FUNKTIONSWEISE:
 # 1. Parsing:
@@ -51,6 +53,7 @@ import math
 import struct
 import subprocess
 import argparse
+import io
 
 # ======================================================================
 # KLASSE: Minimaler MIDI-Parser
@@ -390,53 +393,63 @@ def save_mixed_audio(track_buffers, filename="output.wav", sample_rate=44100):
     # Maximale Länge finden
     max_len = max(len(b) for b in track_buffers)
     mixed = np.zeros(max_len, dtype=np.float32)
-    
+
     # Mischen
     print("Mische Spuren...")
     for b in track_buffers:
         mixed[:len(b)] += b
-        
+
     # Normalisieren (Verhindern von Clipping)
     max_val = np.max(np.abs(mixed))
     if max_val > 0:
         mixed = mixed / max_val * 0.9 # 90% Pegel
-        
+
     # Konvertieren zu 16-bit PCM
     audio_int16 = (np.clip(mixed, -1.0, 1.0) * 32767).astype(np.int16)
-    
-    with wave.open(filename, 'w') as f:
+
+    with wave.open(filename, 'wb') as f:
         f.setnchannels(1) # Mono
         f.setsampwidth(2) # 2 Bytes (16 bit)
         f.setframerate(sample_rate)
         f.writeframes(audio_int16.tobytes())
-    print(f"WAV gespeichert: {filename}")
+    if type(filename) is str:
+        print(f"Audio gespeichert: {filename}")
+    else:
+        print("Audio in Speicher-Puffer geschrieben.")
 
 # ======================================================================
-# AUDIO GENERIERUNG: Timidity
+# AUDIO-GENERIERUNG: Timidity
 # ======================================================================
 def generate_wav_with_timidity(midi_path, output_wav):
-    print(f"Konvertiere MIDI zu WAV mit Timidity: {midi_path} -> {output_wav}")
+    print(f"Konvertiere MIDI zu WAV mit Timidity")
     try:
         # -Ow: Output Mode Wav
         # -o: Output Filename
-        cmd = ['timidity', midi_path, '-Ow', '-o', output_wav, '-A160', '--preserve-silence']
-        subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-        return True
+        ofile = '-' if output_wav is None else output_wav
+        cmd = ['timidity', midi_path, '-Ow', '-o', ofile, '-A160', '--preserve-silence']
+        if output_wav is None:
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
+            mem_file = io.BytesIO(result.stdout)
+            mem_file.seek(0)
+            return mem_file
+        else:
+            subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+            return output_wav
     except FileNotFoundError:
         print("FEHLER: 'timidity' wurde nicht gefunden. Bitte "
             "installieren (sudo apt install timidity) oder den "
             "internen Synth nutzen (ohne -tm).")
-        return False
+        return None
     except subprocess.CalledProcessError as e:
         print(f"FEHLER bei der Ausführung von Timidity: {e}")
-        return False
+        return None
 
 # ======================================================================
 # KLASSE: Visualisierung
 # Kombiniert: Init auf Stereo (für Timidity), Loop über Dict-Structure
 # ======================================================================
 class Visualizer:
-    def __init__(self, width=1024, height=768):
+    def __init__(self, width=1200, height=800):
         pygame.init()
         # Audio init: Channels=2 für Stereokompatibilität mit Timidity.
         # Interne Mono-WAVs werden von Pygame automatisch zentriert.
@@ -444,7 +457,8 @@ class Visualizer:
         
         self.width = width
         self.height = height
-        self.screen = pygame.display.set_mode((width, height))
+        self.screen = pygame.display.set_mode((width, height),
+            pygame.RESIZABLE | pygame.SCALED)
         pygame.display.set_caption("Mivi – MIDI visualizer")
         
         self.clock = pygame.time.Clock()
@@ -583,25 +597,33 @@ class Visualizer:
 # ======================================================================
 # MAIN
 # ======================================================================
+
+# Versehentliches Überschreiben von Dateien vermeiden
+def ensure_nonexistent(path):
+    if path is not None and os.path.isfile(path):
+        print(f"Fehler: Die Datei {path} existiert bereits.")
+        sys.exit(1)
+
 if __name__ == "__main__":
     parser_args = argparse.ArgumentParser(description="Python MIDI Visualizer & Synth")
-    parser_args.add_argument("filename", nargs="?", default="test.mid", help="Pfad zur MIDI-Datei")
+    parser_args.add_argument("filenames", nargs="+", help="Pfad zur MIDI-Datei")
     parser_args.add_argument("-tm", "--timidity", action="store_true", help="Benutze 'timidity' statt internem Synth")
     parser_args.add_argument("-b", "--bpm", type=float, help="Erzwinge eine feste BPM (überschreibt Tempo-Events)")
+    parser_args.add_argument("-u", "--use", action="store_true", help="Gegebene WAV-Datei verwenden.")
     
     args = parser_args.parse_args()
-    midi_file = args.filename
+    midi_file = args.filenames[0]
+
+    wav_file = None
+    if len(args.filenames) > 1:
+        wav_file = args.filenames[1]
 
     if not os.path.exists(midi_file):
         print(f"Datei nicht gefunden: {midi_file}")
         print("Verwendung: python3 mivi.py <datei.mid> [-tm]")
         sys.exit(1)
 
-    # Vorsicht: Diese temporäre Datei wird sowohl überschrieben als
-    # auch später wieder gelöscht.
-    temp_wav = "temp_audio.wav"
-
-    # 1. MIDI Parsen
+    # 1. MIDI parsen
     # Wir benutzen den Parser aus Datei 0, da er reichhaltigere
     # Daten (Channel) liefert.
     print(f"Lese MIDI: {midi_file}...")
@@ -609,19 +631,26 @@ if __name__ == "__main__":
     tracks_struct = parser.get_parsed_notes()
     print(f"{len(tracks_struct)} Spuren gefunden.")
 
-    # 2. Audio Synthese
+    # 2. Audio-Synthese
     audio_success = False
-
-    if args.timidity:
+    if args.use:
+        if wav_file is None:
+            print("Fehler: Option -u erfordert eine zweite Datei (WAV).")
+            sys.exit(1)
+        audio_success = True
+    elif args.timidity:
         # Externer Timidity Aufruf
-        if generate_wav_with_timidity(midi_file, temp_wav):
+        ensure_nonexistent(wav_file)
+        wav_file = generate_wav_with_timidity(midi_file, wav_file)
+        if wav_file is not None:
             audio_success = True
     else:
-        # Interner Python Synth
+        # Interner Python-Synth
+        ensure_nonexistent(wav_file)
         print("Synthetisiere Audio (Pure Python)... Bitte warten.")
         synth = MidiSynth()
         audio_buffers = []
-        
+
         for i, track in enumerate(tracks_struct):
             notes = track['notes']
             channel = track['channel']
@@ -631,7 +660,12 @@ if __name__ == "__main__":
             buf = synth.generate_track_audio(notes, channel)
             audio_buffers.append(buf)
 
-        save_mixed_audio(audio_buffers, temp_wav)
+        if wav_file is None:
+            wav_file = io.BytesIO()
+            save_mixed_audio(audio_buffers, wav_file)
+            wav_file.seek(0)
+        else:
+            save_mixed_audio(audio_buffers, wav_file)
         audio_success = True
 
     if not audio_success:
@@ -642,11 +676,5 @@ if __name__ == "__main__":
     print("Starte Visualisierung...")
     # Etwas breiter als Standard, um Platz zu haben
     viz = Visualizer(width=1200, height=800)
+    viz.run(tracks_struct, wav_file)
 
-    try:
-        viz.run(tracks_struct, temp_wav)
-    finally:
-        if os.path.exists(temp_wav):
-            try:
-                os.remove(temp_wav)
-            except: pass
