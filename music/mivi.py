@@ -508,6 +508,11 @@ class Visualizer:
         while self.is_running:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                    fade_ms = 200 # 200 ms Ausblendzeit
+                    pygame.mixer.music.fadeout(fade_ms)
+                    pygame.time.delay(fade_ms + 800)
+                    # Kurz warten, damit der Fade hörbar ist;
+                    # noch 800 ms hinzu, um Knistern zu vermeiden
                     self.is_running = False
 
             if pygame.mixer.music.get_busy():
