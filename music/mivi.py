@@ -3,7 +3,7 @@
 # Mivi -- Ein MIDI-Synthesizer und -Visualizer
 # ======================================================================
 #
-# Version vom 10. Januar 2026.
+# Version vom 15. Januar 2026.
 #
 # BESCHREIBUNG:
 # Dieses Programm liest Standard-MIDI-Dateien (.mid), parst deren
@@ -15,14 +15,16 @@
 #   ./mivi.py [optionen] dateiname.mid [out.wav]
 #
 # ARGUMENTE:
-#   dateiname.mid   : Pfad zur MIDI-Datei.
-#   out.wav         : Optional die Ausgabe in diese Datei schreiben.
-#   -tm, --timidity : Nutzt das externe Tool 'timidity' für die
-#                     Audio-Erzeugung (bessere Qualität, erfordert
-#                     Installation).
-#   -b, --bpm       : Erzwingt eine feste BPM-Rate (statt die
-#                     Tempo-Events der Datei zu befolgen).
-#   -u, --use       : out.wav nicht schreiben, sondern verwenden.
+#   dateiname.mid     : Pfad zur MIDI-Datei.
+#   out.wav           : Optional die Ausgabe in diese Datei schreiben.
+#   -tm, --timidity   : Nutzt das externe Tool 'timidity' für die
+#                       Audio-Erzeugung (bessere Qualität, erfordert
+#                       Installation).
+#   -fs, --fluidsynth : Nutzt das externe Tool 'fluidsynth' für die
+#                       Audio-Erzeugung.
+#   -b, --bpm         : Erzwingt eine feste BPM-Rate (statt die
+#                       Tempo-Events der Datei zu befolgen).
+#   -u, --use         : out.wav nicht schreiben, sondern verwenden.
 #
 # FUNKTIONSWEISE:
 # 1. Parsing:
@@ -54,6 +56,7 @@ import struct
 import subprocess
 import argparse
 import io
+import platform
 
 # ======================================================================
 # KLASSE: Minimaler MIDI-Parser
@@ -418,15 +421,26 @@ def save_mixed_audio(track_buffers, filename="output.wav", sample_rate=44100):
         print("Audio in Speicher-Puffer geschrieben.")
 
 # ======================================================================
-# AUDIO-GENERIERUNG: Timidity
+# AUDIO-GENERIERUNG: Timidity/Fluidsynth
 # ======================================================================
-def generate_wav_with_timidity(midi_path, output_wav):
-    print(f"Konvertiere MIDI zu WAV mit Timidity")
-    try:
-        # -Ow: Output Mode Wav
-        # -o: Output Filename
+def generate_wav_with_tool(midi_path, output_wav, args):
+    tool = "Fluidsynth" if args.fluidsynth else "Timidity"
+    print(f"Konvertiere MIDI zu WAV mit {tool}")
+    if args.fluidsynth:
+        # Bei Fluidsynth geht Ausgabe nach stdout irgendwie nicht.
+        # Daher in temporäre Datei schreiben.
+        if output_wav is None:
+            if platform.system() in ["Linux", "FreeBSD", "OpenBSD", "NetBSD"]:
+                output_wav = "/dev/shm/temp_audio.wav" # im RAM halten
+            else:
+                output_wav = os.path.join(tempfile.gettempdir(), "temp_audio.wav")
+        cmd = ['fluidsynth', '-ni', '-T', 'wav', '-F', output_wav, '-a', 'file', midi_path]
+    else:
         ofile = '-' if output_wav is None else output_wav
         cmd = ['timidity', midi_path, '-Ow', '-o', ofile, '-A160', '--preserve-silence']
+        # -Ow: Output Mode Wav
+        # -o: Output Filename
+    try:
         if output_wav is None:
             result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=True)
             mem_file = io.BytesIO(result.stdout)
@@ -436,12 +450,12 @@ def generate_wav_with_timidity(midi_path, output_wav):
             subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
             return output_wav
     except FileNotFoundError:
-        print("FEHLER: 'timidity' wurde nicht gefunden. Bitte "
-            "installieren (sudo apt install timidity) oder den "
-            "internen Synth nutzen (ohne -tm).")
+        print(f"FEHLER: '{tool.lower()}' wurde nicht gefunden.")
+        print("Bitte installieren oder den internen Synth "
+              "(Aufruf ohne -tm/-fs) nutzen.")
         return None
     except subprocess.CalledProcessError as e:
-        print(f"FEHLER bei der Ausführung von Timidity: {e}")
+        print(f"FEHLER bei der Ausführung von {tool}: {e}")
         return None
 
 # ======================================================================
@@ -613,6 +627,7 @@ if __name__ == "__main__":
     parser_args = argparse.ArgumentParser(description="Python MIDI Visualizer & Synth")
     parser_args.add_argument("filenames", nargs="+", help="Pfad zur MIDI-Datei")
     parser_args.add_argument("-tm", "--timidity", action="store_true", help="Benutze 'timidity' statt internem Synth")
+    parser_args.add_argument("-fs", "--fluidsynth", action="store_true", help="Benutze 'fluidsynth' statt internem Synth")
     parser_args.add_argument("-b", "--bpm", type=float, help="Erzwinge eine feste BPM (überschreibt Tempo-Events)")
     parser_args.add_argument("-u", "--use", action="store_true", help="Gegebene WAV-Datei verwenden.")
     
@@ -643,10 +658,10 @@ if __name__ == "__main__":
             print("Fehler: Option -u erfordert eine zweite Datei (WAV).")
             sys.exit(1)
         audio_success = True
-    elif args.timidity:
-        # Externer Timidity Aufruf
+    elif args.timidity or args.fluidsynth:
+        # Externer Aufruf von Timidity/Fluidsynth
         ensure_nonexistent(wav_file)
-        wav_file = generate_wav_with_timidity(midi_file, wav_file)
+        wav_file = generate_wav_with_tool(midi_file, wav_file, args)
         if wav_file is not None:
             audio_success = True
     else:
