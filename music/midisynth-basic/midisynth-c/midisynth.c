@@ -110,8 +110,15 @@ size_t event_capacity = 0;
 
 void add_event(MidiEvent e) {
     if (event_count >= event_capacity) {
-        event_capacity = (event_capacity == 0) ? 1024 : event_capacity * 2;
-        events = realloc(events, event_capacity * sizeof(MidiEvent));
+        size_t new_capacity = (event_capacity == 0) ? 1024 : event_capacity * 2;
+        MidiEvent *temp = realloc(events, new_capacity * sizeof(MidiEvent));
+        if (temp == NULL) {
+            fprintf(stderr, "Error: Out of memory reallocating events.\n");
+            free(events);
+            exit(1);
+        }
+        events = temp;
+        event_capacity = new_capacity;
     }
     events[event_count++] = e;
 }
@@ -382,7 +389,7 @@ double midi_to_freq(int key) {
 
 void synthesize_and_write(
     const char *filename,
-    Note *notes,
+    const Note *notes,
     size_t note_count,
     double total_duration
 ) {
@@ -391,7 +398,7 @@ void synthesize_and_write(
     size_t i;
 
     /* Additive synthesis parameters */
-    double overtones[] = {1.0, 0.5, 0.3, 0.1};
+    const double overtones[] = {1.0, 0.5, 0.3, 0.1};
     int num_overtones = 4;
     double attack = 0.05;
     double release = 0.1;
@@ -419,14 +426,14 @@ void synthesize_and_write(
         double duration = is_drum ? 0.05 : n.duration;
         double amp = (n.velocity / 127.0) * 0.3; /* 0.3 as headroom */
 
-        size_t start_s = (size_t)(n.start_time * SAMPLE_RATE);
-        size_t len_s = (size_t)((duration + release) * SAMPLE_RATE);
+        const size_t start_s = (size_t)(n.start_time * SAMPLE_RATE);
+        const size_t len_s = (size_t)((duration + release) * SAMPLE_RATE);
         size_t end_s = start_s + len_s;
         size_t t;
 
         if (end_s > total_samples) end_s = total_samples;
 
-        for (t = 0; t < len_s && (start_s + t) < total_samples; t++) {
+        for (t = 0; start_s + t < end_s; t++) {
             double time_in_note = (double)t / SAMPLE_RATE;
             double sample_val = 0.0;
             double env = 1.0;

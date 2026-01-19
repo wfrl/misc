@@ -73,7 +73,7 @@ typedef struct {
 
 SDL_Color get_channel_color(int channel) {
     /* Einfache Mapping-Tabelle ähnlich dem Python-Skript */
-    SDL_Color colors[] = {
+    const SDL_Color colors[] = {
         {0, 220, 220, 255}, {255, 0, 200, 255}, {255, 220, 0, 255},
         {0, 200, 100, 255}, {100, 100, 255, 255}, {255, 100, 100, 255},
         {200, 0, 255, 255}, {0, 255, 100, 255}, {255, 128, 0, 255}
@@ -162,8 +162,15 @@ size_t event_capacity = 0;
 
 void add_event(MidiEvent e) {
     if (event_count >= event_capacity) {
-        event_capacity = (event_capacity == 0) ? 1024 : event_capacity * 2;
-        events = realloc(events, event_capacity * sizeof(MidiEvent));
+        size_t new_capacity = (event_capacity == 0) ? 1024 : event_capacity * 2;
+        MidiEvent *temp = realloc(events, new_capacity * sizeof(MidiEvent));
+        if (temp == NULL) {
+            fprintf(stderr, "Error: Out of memory reallocating events.\n");
+            free(events);
+            exit(1);
+        }
+        events = temp;
+        event_capacity = new_capacity;
     }
     events[event_count++] = e;
 }
@@ -215,9 +222,19 @@ void parse_midi(const char *filename, uint16_t *division) {
             abs_tick += read_varlen(f);
             uint8_t byte;
             safe_fread(&byte, 1, 1, f);
-            uint8_t status = (byte >= 0x80) ? (running_status = byte) : running_status;
-            if (byte < 0x80) fseek(f, -1, SEEK_CUR);
 
+            uint8_t status;
+            if (byte >= 0x80) {
+                status = byte;
+                running_status = status;
+            } else {
+                if (running_status == 0) {
+                    /* printf("Datenbyte ohne Status ignoriert\n"); */
+                    continue;
+                }
+                status = running_status;
+                fseek(f, -1, SEEK_CUR);
+            }
             if (status == 0xFF) {
                 uint8_t type; safe_fread(&type, 1, 1, f);
                 uint32_t len = read_varlen(f);
@@ -292,7 +309,7 @@ Note* convert_to_notes(uint16_t division, size_t *count, double *duration) {
    ================================================================== */
 double midi_to_freq(int key) { return 440.0 * pow(2.0, (key - 69) / 12.0); }
 
-void synthesize_to_ram(Note *notes, size_t count, double duration, AudioContext *ctx) {
+void synthesize_to_ram(const Note *notes, size_t count, double duration, AudioContext *ctx) {
     size_t total_samples = (size_t)(duration * SAMPLE_RATE);
     ctx->total_samples = total_samples;
     ctx->play_cursor = 0;
@@ -301,9 +318,9 @@ void synthesize_to_ram(Note *notes, size_t count, double duration, AudioContext 
     float *mix_buf = calloc(total_samples, sizeof(float));
     if(!mix_buf) { fprintf(stderr, "Out of Memory (Audio).\n"); exit(1); }
 
-    printf("Synthetisiere %lu Noten (%.1f s)...\n", count, duration);
+    printf("Synthetisiere %zu Noten (%.1f s)...\n", count, duration);
 
-    double overtones[] = {1.0, 0.5, 0.3, 0.1};
+    const double overtones[] = {1.0, 0.5, 0.3, 0.1};
     int num_overtones = 4;
     double release = 0.1;
 
@@ -444,7 +461,7 @@ void generate_audio_with_timidity(const char *midifile, AudioContext *ctx) {
     /* Cleanup */
     free(raw_data); /* Den ursprünglichen Roh-Puffer brauchen wir nicht mehr */
 
-    printf("Audio von Timidity geladen (RAW): %lu Samples (%.2fs)\n",
+    printf("Audio von Timidity geladen (RAW): %zu Samples (%.2fs)\n",
            ctx->total_samples, (double)ctx->total_samples / SAMPLE_RATE);
 }
 
@@ -571,7 +588,7 @@ int compare_notes_start(const void *a, const void *b) {
 }
 
 int main(int argc, char **argv) {
-    char *midifile = NULL;
+    const char *midifile = NULL;
     int use_timidity = 0;
 
     /* Argumente parsen */
@@ -697,7 +714,7 @@ int main(int argc, char **argv) {
 
         /* NOTEN (Falling Blocks) */
         for (size_t i = 0; i < note_count; i++) {
-            Note *n = &notes[i];
+            const Note *n = &notes[i];
 
             /* Clipping: Nur Noten zeichnen, die im sichtbaren Bereich sind */
             /* Note ist sichtbar wenn: (start <= t + 5.0) UND (end >= t - 1.0) */
