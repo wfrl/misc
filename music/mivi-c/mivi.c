@@ -1,6 +1,6 @@
 /* ==================================================================
  * Mivi -- Ein MIDI-Visualizer und Synthesizer (Portierung auf C)
- * Version 2026-01-14
+ * Version 2026-01-22
  * ================================================================== */
 
 #include <stdio.h>
@@ -587,9 +587,180 @@ int compare_notes_start(const void *a, const void *b) {
     return 0;
 }
 
+typedef struct {
+    /* Zustand */
+    int running;
+    int paused;
+    Uint64 pause_start_counter;
+    Uint64 start_counter;
+    Uint64 frequency;
+    int active_keys[128];
+      /* Aktive Tasten merken für Visualisierung */
+    SDL_Color active_colors[128];
+
+    /* Ressourcen */
+    SDL_AudioDeviceID dev;
+    AudioContext ctx;
+    size_t note_count;
+} Env;
+
+void handle_input(Env *env) {
+    SDL_Event ev;
+    Uint64 now_counter = SDL_GetPerformanceCounter();
+    while (SDL_PollEvent(&ev)) {
+        if (ev.type == SDL_QUIT) env->running = 0;
+        else if (ev.type == SDL_KEYDOWN) {
+            switch (ev.key.keysym.sym) {
+                case SDLK_ESCAPE:
+                    env->running = 0;
+                    break;
+                case SDLK_k: /* Pause / Play */
+                case SDLK_SPACE:
+                    env->paused = !env->paused;
+                    if (env->paused) {
+                        env->pause_start_counter = now_counter;
+                        SDL_PauseAudioDevice(env->dev, 1); /* Audio pausieren */
+                    } else {
+                        /* Die Zeit, die wir pausiert waren, auf den Start-Counter addieren,
+                           damit der Song nicht visuell nach vorne springt */
+                        Uint64 paused_duration = now_counter - env->pause_start_counter;
+                        env->start_counter += paused_duration;
+                        SDL_PauseAudioDevice(env->dev, 0); /* Audio fortsetzen */
+                    }
+                    break;
+                case SDLK_j: /* Zurück (-5s) */
+                case SDLK_l: /* Vor (+5s) */
+                case SDLK_LEFT:
+                case SDLK_RIGHT:
+                    {
+                        /* Um die Zeit zu ändern, manipulieren wir den start_counter.
+                           start_counter erhöhen = Zeit läuft zurück.
+                           start_counter verringern = Zeit läuft vor. */
+                        Uint64 jump_ticks = env->frequency * 5;
+
+                        if (ev.key.keysym.sym == SDLK_j || ev.key.keysym.sym == SDLK_LEFT) {
+                            env->start_counter += jump_ticks;
+                        } else {
+                            env->start_counter -= jump_ticks;
+                        }
+
+                        /* Audio-Cursor synchronisieren */
+                        /* Berechnen, wo wir jetzt wären */
+                        Uint64 ref_time = env->paused ? env->pause_start_counter : now_counter;
+
+                        /* Schutz gegen negative Zeit (start_counter liegt in Zukunft) */
+                        if (env->start_counter > ref_time) env->start_counter = ref_time;
+
+                        double new_time = (double)(ref_time - env->start_counter) / env->frequency;
+
+                        /* Cursor setzen */
+                        long new_cursor = (long)(new_time * SAMPLE_RATE);
+                        if (new_cursor < 0) new_cursor = 0;
+                        if ((size_t)new_cursor >= env->ctx.total_samples) new_cursor = env->ctx.total_samples - 1;
+
+                        /* Atomares Update des Cursors (volatile) */
+                        env->ctx.play_cursor = (size_t)new_cursor;
+                    }
+                    break;
+            }
+        }
+    }
+}
+
+void render_keyboard(SDL_Renderer *rend, Env *env,
+    int w, int note_area_h, int keyboard_height
+) {
+    /* 1. Weiße Tasten */
+    for (int m = MIN_MIDI; m <= MAX_MIDI; m++) {
+        if (!is_black_key(m)) {
+            float x, width; int bk;
+            get_key_geometry(m, (float)w, &x, &width, &bk);
+
+            SDL_Color c = {220, 220, 220, 255};
+            if (env->active_keys[m]) {
+                /* Mix mit Notenfarbe */
+                c.r = (env->active_colors[m].r + 255) / 2;
+                c.g = (env->active_colors[m].g + 255) / 2;
+                c.b = (env->active_colors[m].b + 255) / 2;
+            }
+
+            SDL_SetRenderDrawColor(rend, c.r, c.g, c.b, 255);
+            RenderFillRoundedRect(rend, (int)x, note_area_h,
+                (int)width - 1, keyboard_height, 5,
+                CORNER_BL | CORNER_BR);
+        }
+    }
+    /* 2. Schwarze Tasten (oben drüber) */
+    for (int m = MIN_MIDI; m <= MAX_MIDI; m++) {
+        if (is_black_key(m)) {
+            float x, width; int bk;
+            get_key_geometry(m, (float)w, &x, &width, &bk);
+
+            SDL_Color c = {20, 20, 20, 255};
+            if (env->active_keys[m]) {
+                c.r = (env->active_colors[m].r + 100) / 2;
+                c.g = (env->active_colors[m].g + 100) / 2;
+                c.b = (env->active_colors[m].b + 100) / 2;
+            }
+
+            SDL_SetRenderDrawColor(rend, c.r, c.g, c.b, 255);
+            RenderFillRoundedRect(rend,
+                (int)x, note_area_h, (int)width,
+                (int)(keyboard_height * 0.65), 3,
+                CORNER_BL | CORNER_BR);
+        }
+    }
+}
+
+void render_notes(SDL_Renderer *rend, Env *env, Note *notes,
+    int w, int note_area_h, double current_time, double lookahead_time
+) {
+    for (size_t i = 0; i < env->note_count; i++) {
+        const Note *n = &notes[i];
+
+        /* Clipping: Nur Noten zeichnen, die im sichtbaren Bereich sind */
+        /* Note ist sichtbar wenn: (start <= t + 5.0) UND (end >= t - 1.0) */
+        if (n->start_time > current_time + lookahead_time) break;
+
+        if ((n->start_time + n->duration) < current_time - 1.0) continue;
+
+        float time_diff = (float)(n->start_time - current_time);
+        float note_y = note_area_h - (time_diff * PIXELS_PER_SECOND);
+        float note_h = (float)(n->duration * PIXELS_PER_SECOND);
+        float draw_y = note_y - note_h;
+
+        /* Check ob Note "aktiv" ist (wird gerade gespielt) */
+        int is_playing = (current_time >= n->start_time &&
+            current_time < (n->start_time + n->duration));
+        if (is_playing) {
+            env->active_keys[n->midi_key] = 1;
+            env->active_colors[n->midi_key] = n->color;
+        }
+
+        if (n->midi_key >= MIN_MIDI && n->midi_key <= MAX_MIDI) {
+            float x, width;
+            int is_bk;
+            get_key_geometry(n->midi_key, (float)w, &x, &width, &is_bk);
+
+            /* Farbe aufhellen wenn aktiv */
+            SDL_Color c = n->color;
+            if(is_playing) {
+                c.r = (c.r > 195) ? 255 : c.r + 60;
+                c.g = (c.g > 195) ? 255 : c.g + 60;
+                c.b = (c.b > 195) ? 255 : c.b + 60;
+            }
+
+            SDL_SetRenderDrawColor(rend, c.r, c.g, c.b, 255);
+            RenderFillRoundedRect(rend, (int)x + 1, (int)draw_y,
+                (int)width - 2, (int)note_h, 4, CORNER_ALL);
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     const char *midifile = NULL;
     int use_timidity = 0;
+    Env env;
 
     /* Argumente parsen */
     for (int i = 1; i < argc; i++) {
@@ -609,9 +780,8 @@ int main(int argc, char **argv) {
     /* 1. MIDI parsen */
     uint16_t division;
     parse_midi(midifile, &division);
-    size_t note_count;
     double duration;
-    Note *notes = convert_to_notes(division, &note_count, &duration);
+    Note *notes = convert_to_notes(division, &env.note_count, &duration);
     if (!notes) { printf("Keine Noten gefunden.\n"); return 1; }
 
     /* Array nach Startzeit sortieren, damit das break bei
@@ -622,15 +792,14 @@ int main(int argc, char **argv) {
      * Note-Off-Event im MIDI-Stream auftaucht (also wenn die Note zu
      * Ende ist). Dadurch ist die Notenliste effektiv nach Endzeitpunkt
      * sortiert, nicht nach Startzeitpunkt. */
-    qsort(notes, note_count, sizeof(Note), compare_notes_start);
+    qsort(notes, env.note_count, sizeof(Note), compare_notes_start);
 
     /* 2. Audio synthetisieren */
-    AudioContext ctx;
     if (use_timidity) {
-        memset(&ctx, 0, sizeof(ctx)); /* Sicherstellen, dass alles 0 ist */
-        generate_audio_with_timidity(midifile, &ctx);
+        memset(&env.ctx, 0, sizeof(env.ctx)); /* Sicherstellen, dass alles 0 ist */
+        generate_audio_with_timidity(midifile, &env.ctx);
     } else {
-        synthesize_to_ram(notes, note_count, duration, &ctx);
+        synthesize_to_ram(notes, env.note_count, duration, &env.ctx);
     }
 
 
@@ -654,51 +823,48 @@ int main(int argc, char **argv) {
     want.channels = AUDIO_CHANNELS;
     want.samples = 2048;
     want.callback = audio_callback;
-    want.userdata = &ctx;
+    want.userdata = &env.ctx;
 
-    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
-    if (dev == 0) {
+    env.dev = SDL_OpenAudioDevice(NULL, 0, &want, &have, 0);
+    if (env.dev == 0) {
         fprintf(stderr, "Audio Device Fehler: %s\n", SDL_GetError());
         return 1;
     }
 
-    SDL_PauseAudioDevice(dev, 0); /* Start Audio */
+    SDL_PauseAudioDevice(env.dev, 0); /* Start Audio */
 
     /* 4. Main Loop */
-    int running = 1;
-    SDL_Event ev;
-
-    /* Aktive Tasten merken für Visualisierung */
-    int active_keys[128];
-    SDL_Color active_colors[128];
+    env.running = 1;
+    env.paused = 0;
+    env.pause_start_counter = 0;
 
     /* ZEITMESSUNG: Wir nutzen den High-Res Timer für flüssige Grafik */
-    Uint64 start_counter = SDL_GetPerformanceCounter();
-    Uint64 frequency = SDL_GetPerformanceFrequency();
+    env.start_counter = SDL_GetPerformanceCounter();
+    env.frequency = SDL_GetPerformanceFrequency();
 
     /* Timidity liefert manchmal etwas mehr oder weniger Audio als die
      * MIDI Zeit berechnet. Wir nutzen die Länge des Audiobuffers als
      * Obergrenze für den Loop. */
-    double actual_audio_duration = (double)ctx.total_samples / SAMPLE_RATE;
+    double actual_audio_duration = (double)env.ctx.total_samples / SAMPLE_RATE;
     double loop_limit = (actual_audio_duration > duration) ? actual_audio_duration : duration;
 
-    while (running) {
-        while (SDL_PollEvent(&ev)) {
-            if (ev.type == SDL_QUIT) running = 0;
-        }
+    while (env.running) {
+        handle_input(&env);
 
         /* Zeit berechnen */
-        Uint64 current_counter = SDL_GetPerformanceCounter();
-        double current_time = (double)(current_counter - start_counter) / frequency;
+        Uint64 current_counter = env.paused ? env.pause_start_counter : SDL_GetPerformanceCounter();
+
+        double current_time = (double)(current_counter - env.start_counter) / env.frequency;
         if (use_timidity) {
-            if (current_time > loop_limit + 1.5) running = 0;
+            if (current_time > loop_limit + 1.5) env.running = 0;
         } else {
-            if (current_time > duration + 1.0) running = 0; /* Auto-Quit am Ende */
+            if (current_time > duration + 1.0) env.running = 0; /* Auto-Quit am Ende */
         }
 
         int w, h;
         SDL_GetWindowSize(win, &w, &h);
-        int note_area_h = h - KEYBOARD_HEIGHT;
+        int keyboard_height = KEYBOARD_HEIGHT * w / WINDOW_WIDTH;
+        int note_area_h = h - keyboard_height;
 
         /* BERECHNUNG: Wie viele Sekunden passen vertikal auf den Schirm? */
         /* Wir addieren einen Puffer (z.B. 1.0s), damit Noten sanft reinkommen */
@@ -710,101 +876,22 @@ int main(int argc, char **argv) {
         SDL_RenderClear(rend);
 
         /* Tasten Status Reset */
-        for(int i=0; i<128; i++) active_keys[i] = 0;
+        for(int i=0; i<128; i++) env.active_keys[i] = 0;
 
         /* NOTEN (Falling Blocks) */
-        for (size_t i = 0; i < note_count; i++) {
-            const Note *n = &notes[i];
-
-            /* Clipping: Nur Noten zeichnen, die im sichtbaren Bereich sind */
-            /* Note ist sichtbar wenn: (start <= t + 5.0) UND (end >= t - 1.0) */
-            if (n->start_time > current_time + lookahead_time) break;
-
-            if ((n->start_time + n->duration) < current_time - 1.0) continue;
-
-            float time_diff = (float)(n->start_time - current_time);
-            float note_y = note_area_h - (time_diff * PIXELS_PER_SECOND);
-            float note_h = (float)(n->duration * PIXELS_PER_SECOND);
-            float draw_y = note_y - note_h;
-
-            /* Check ob Note "aktiv" ist (wird gerade gespielt) */
-            int is_playing = (current_time >= n->start_time &&
-                current_time < (n->start_time + n->duration));
-            if (is_playing) {
-                active_keys[n->midi_key] = 1;
-                active_colors[n->midi_key] = n->color;
-            }
-
-            if (n->midi_key >= MIN_MIDI && n->midi_key <= MAX_MIDI) {
-                float x, width;
-                int is_bk;
-                get_key_geometry(n->midi_key, (float)w, &x, &width, &is_bk);
-
-                /* Farbe aufhellen wenn aktiv */
-                SDL_Color c = n->color;
-                if(is_playing) {
-                    c.r = (c.r > 195) ? 255 : c.r + 60;
-                    c.g = (c.g > 195) ? 255 : c.g + 60;
-                    c.b = (c.b > 195) ? 255 : c.b + 60;
-                }
-
-                SDL_SetRenderDrawColor(rend, c.r, c.g, c.b, 255);
-                RenderFillRoundedRect(rend, (int)x + 1, (int)draw_y,
-                    (int)width - 2, (int)note_h, 4, CORNER_ALL);
-            }
-        }
+        render_notes(rend, &env, notes, w, note_area_h, current_time, lookahead_time);
 
         /* KLAVIATUR */
-        /* 1. Weiße Tasten */
-        for (int m = MIN_MIDI; m <= MAX_MIDI; m++) {
-            if (!is_black_key(m)) {
-                float x, width; int bk;
-                get_key_geometry(m, (float)w, &x, &width, &bk);
-
-                SDL_Color c = {220, 220, 220, 255};
-                if (active_keys[m]) {
-                    /* Mix mit Notenfarbe */
-                    c.r = (active_colors[m].r + 255) / 2;
-                    c.g = (active_colors[m].g + 255) / 2;
-                    c.b = (active_colors[m].b + 255) / 2;
-                }
-
-                SDL_SetRenderDrawColor(rend, c.r, c.g, c.b, 255);
-                RenderFillRoundedRect(rend, (int)x, note_area_h,
-                    (int)width - 1, KEYBOARD_HEIGHT, 5,
-                    CORNER_BL | CORNER_BR);
-            }
-        }
-        /* 2. Schwarze Tasten (oben drüber) */
-        for (int m = MIN_MIDI; m <= MAX_MIDI; m++) {
-            if (is_black_key(m)) {
-                float x, width; int bk;
-                get_key_geometry(m, (float)w, &x, &width, &bk);
-
-                SDL_Color c = {20, 20, 20, 255};
-                if (active_keys[m]) {
-                    c.r = (active_colors[m].r + 100) / 2;
-                    c.g = (active_colors[m].g + 100) / 2;
-                    c.b = (active_colors[m].b + 100) / 2;
-                }
-
-                SDL_SetRenderDrawColor(rend, c.r, c.g, c.b, 255);
-                RenderFillRoundedRect(rend,
-                    (int)x, note_area_h, (int)width,
-                    (int)(KEYBOARD_HEIGHT * 0.65), 3,
-                    CORNER_BL | CORNER_BR);
-            }
-        }
-
+        render_keyboard(rend, &env, w, note_area_h, keyboard_height);
         SDL_RenderPresent(rend);
     }
 
     /* Cleanup */
-    SDL_CloseAudioDevice(dev);
+    SDL_CloseAudioDevice(env.dev);
     SDL_DestroyRenderer(rend);
     SDL_DestroyWindow(win);
     SDL_Quit();
-    free(ctx.pcm_buffer);
+    free(env.ctx.pcm_buffer);
     free(notes);
     if(events) free(events);
 
