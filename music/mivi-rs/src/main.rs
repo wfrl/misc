@@ -17,6 +17,7 @@ use std::f64::consts::PI;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
 
 // =====================================================================
 // KONFIGURATION UND KONSTANTEN
@@ -172,7 +173,7 @@ fn read_varlen(f: &mut File) -> std::io::Result<u32> {
 
 fn parse_midi(filename: &str) -> Result<(Vec<MidiEvent>, u16), Box<dyn std::error::Error>> {
     let mut f = File::open(filename)?;
-    
+
     // Header Check
     let mut chunk_id = [0u8; 4];
     f.read_exact(&mut chunk_id)?;
@@ -226,7 +227,7 @@ fn parse_midi(filename: &str) -> Result<(Vec<MidiEvent>, u16), Box<dyn std::erro
                 f.read_exact(&mut byte)?; // Type
                 let meta_type = byte[0];
                 let len = read_varlen(&mut f)?;
-                
+
                 if meta_type == 0x51 && len == 3 {
                     let mut tb = [0u8; 3];
                     f.read_exact(&mut tb)?;
@@ -250,7 +251,7 @@ fn parse_midi(filename: &str) -> Result<(Vec<MidiEvent>, u16), Box<dyn std::erro
                 // Channel Event
                 let cmd = status & 0xF0;
                 let ch = status & 0x0F;
-                
+
                 if cmd == 0x90 || cmd == 0x80 {
                     let mut params = [0u8; 2];
                     f.read_exact(&mut params)?;
@@ -301,7 +302,7 @@ fn convert_to_notes(events: &[MidiEvent], division: u16) -> (Vec<Note>, f64) {
             EventType::NoteOn => {
                 let ch = e.channel as usize;
                 let n = e.note as usize;
-                
+
                 // Falls Note schon an, vorherige beenden (Retrigger)
                 if let Some((start, vel)) = active_notes[ch][n] {
                     let dur = cur_time - start;
@@ -352,7 +353,7 @@ fn convert_to_notes(events: &[MidiEvent], division: u16) -> (Vec<Note>, f64) {
 fn synthesize_to_ram(notes: &[Note], duration: f64) -> Vec<i16> {
     let total_samples = (duration * SAMPLE_RATE as f64) as usize;
     let mut mix_buf = vec![0.0f32; total_samples];
-    
+
     println!("Synthetisiere {} Noten ({:.1} s)...", notes.len(), duration);
 
     let overtones = [1.0, 0.5, 0.3, 0.1];
@@ -360,7 +361,7 @@ fn synthesize_to_ram(notes: &[Note], duration: f64) -> Vec<i16> {
 
     for n in notes {
         let is_drum = n._channel == 9;
-        let freq = if is_drum { 100.0 } else { 
+        let freq = if is_drum { 100.0 } else {
             440.0 * 2.0f64.powf((n.midi_key as f64 - 69.0) / 12.0)
         };
         let dur = if is_drum { 0.05 } else { n.duration };
@@ -371,7 +372,7 @@ fn synthesize_to_ram(notes: &[Note], duration: f64) -> Vec<i16> {
 
         for t in 0..len_s {
             if start_s + t >= total_samples { break; }
-            
+
             let time = t as f64 / SAMPLE_RATE as f64;
             let mut val = 0.0;
 
@@ -414,7 +415,7 @@ fn synthesize_to_ram(notes: &[Note], duration: f64) -> Vec<i16> {
 
 fn generate_audio_with_timidity(midifile: &str) -> Result<Vec<i16>, Box<dyn std::error::Error>> {
     println!("Starte Timidity via Pipe (Raw PCM)...");
-    
+
     let output = Command::new("timidity")
         .args(&[
             midifile, "-Or", "-s", "44100", "-A160", "--preserve-silence", "-o", "-"
@@ -443,14 +444,14 @@ fn generate_audio_with_timidity(midifile: &str) -> Result<Vec<i16>, Box<dyn std:
     let dst_format = target_format;
     // Unser Zielformat (definiert im struct SoundProvider)
     // (i16 im RAM ist auch native endian)
-    
+
     let cvt = AudioCVT::new(
         src_format, 2, 44100,
         dst_format, AUDIO_CHANNELS, SAMPLE_RATE
     ).map_err(|e| format!("CVT Build Error: {}", e))?;
 
     let output_samples = cvt.convert(raw_data);
-    
+
     // Vec<u8> zu Vec<i16>
     // Sicherheitsannahme: System ist Little Endian, oder S16SYS passt.
     // Ein cast über slices ist in Rust unsafe oder benötigt byteorder.
@@ -497,7 +498,7 @@ fn render_fill_rounded_rect(
 ) -> Result<(), String> {
     if r * 2 > w { r = w / 2; }
     if r * 2 > h { r = h / 2; }
-    
+
     // Sicherheit gegen negative Größen
     if w < 0 { w = 0; }
     if h < 0 { h = 0; }
@@ -512,7 +513,7 @@ fn render_fill_rounded_rect(
     // TL
     if corners & CORNER_TL != 0 { fill_quarter_circle(canvas, x + r, y + r, r, 0)?; }
     else { canvas.fill_rect(Rect::new(x, y, r as u32, r as u32))?; }
-    
+
     // TR
     if corners & CORNER_TR != 0 { fill_quarter_circle(canvas, x + w - r - 1, y + r, r, 1)?; }
     else { canvas.fill_rect(Rect::new(x + w - r, y, r as u32, r as u32))?; }
@@ -554,7 +555,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 1. MIDI Parsen
     let (events, division) = parse_midi(midifile)?;
     let (notes, duration) = convert_to_notes(&events, division);
-    
+
     if notes.is_empty() {
         return Err("Keine Noten gefunden.".into());
     }
@@ -567,13 +568,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     let audio_duration = pcm_buffer.len() as f64 / SAMPLE_RATE as f64;
-    
+
     // 3. SDL Init
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video()?;
     let audio_subsystem = sdl_context.audio()?;
 
-    let window = video_subsystem.window("Mivi Rust", WINDOW_WIDTH, WINDOW_HEIGHT)
+    let window = video_subsystem.window("Mivi", WINDOW_WIDTH, WINDOW_HEIGHT)
         .position_centered()
         .resizable()
         .build()?;
@@ -590,7 +591,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         samples: Some(2048),
     };
 
-    let device = audio_subsystem.open_playback(None, &desired_spec, |_spec| {
+    let mut device = audio_subsystem.open_playback(None, &desired_spec, |_spec| {
         SoundProvider {
             samples: pcm_buffer,
             cursor: 0,
@@ -601,38 +602,121 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 4. Main Loop
     let mut event_pump = sdl_context.event_pump()?;
-    let start_instant = std::time::Instant::now();
-    
-    // Damit die Audio-Länge bestimmt wann Ende ist (wie im C Code für Timidity)
+
+    // ZEITMESSUNG INITIALISIERUNG
+    let mut start_instant = Instant::now();
+    let mut paused = false;
+    let mut pause_start_time = Instant::now(); // Merkt sich, wann Pause gedrückt wurde
+
+    // Damit die Audio-Länge bestimmt wann Ende ist
     let loop_limit = if audio_duration > duration { audio_duration } else { duration };
 
     let mut active_keys = [false; 128];
     let mut active_colors = [Color::RGB(0,0,0); 128];
 
     'running: loop {
+        // INPUT HANDLING
         for event in event_pump.poll_iter() {
             match event {
                 Event::Quit {..} |
                 Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
                     break 'running
                 },
+                Event::KeyDown { keycode: Some(k), .. } => {
+                    match k {
+                        // PAUSE / PLAY
+                        Keycode::Space | Keycode::K => {
+                            paused = !paused;
+                            if paused {
+                                pause_start_time = Instant::now();
+                                device.pause();
+                            } else {
+                                // Die Zeit, die wir pausiert waren, auf den Start-Zeitpunkt addieren,
+                                // damit der Song nicht visuell nach vorne springt.
+                                let paused_duration = Instant::now().duration_since(pause_start_time);
+                                start_instant += paused_duration;
+                                device.resume();
+                            }
+                        },
+                        // SPULEN
+                        Keycode::Left | Keycode::J | Keycode::Right | Keycode::L => {
+                            let jump = Duration::from_secs(5);
+                            let is_forward = k == Keycode::Right || k == Keycode::L;
+
+                            if !is_forward {
+                                // Zurückspulen: Startzeit in die Zukunft schieben -> Differenz wird kleiner
+                                start_instant += jump;
+                            } else {
+                                // Vorspulen: Startzeit in die Vergangenheit schieben -> Differenz wird größer
+                                // checked_sub verhindert Panic, falls wir vor den Programmstart kämen
+                                if let Some(new_start) = start_instant.checked_sub(jump) {
+                                    start_instant = new_start;
+                                }
+                            }
+
+                            // AUDIO SYNCHRONISIEREN
+                            // Berechnen, wo wir zeitlich jetzt wären
+                            let ref_time = if paused { pause_start_time } else { Instant::now() };
+
+                            // Clampen, falls über den Anfang hinaus
+                            // zurückgesprungen wurde
+                            if start_instant > ref_time { start_instant = ref_time; }
+
+                            // Schutz gegen negative Zeit (falls Startzeit in Zukunft liegt durch wildes Zurückspulen)
+                            let new_time_secs = if ref_time > start_instant {
+                                ref_time.duration_since(start_instant).as_secs_f64()
+                            } else {
+                                0.0
+                            };
+
+                            // Cursor berechnen
+                            let mut new_cursor = (new_time_secs * SAMPLE_RATE as f64) as usize;
+
+                            // Bounds Check
+                            // Da pcm_buffer in 'device' gemoved wurde, kennen wir die Länge hier eigentlich nicht direkt,
+                            // außer wir haben sie vorher gespeichert oder nutzen den Lock.
+                            // Oben haben wir `pcm_buffer` an den SoundProvider übergeben.
+                            // Lösung: Wir greifen über den Lock auf die Samples zu.
+                            let mut lock = device.lock();
+                            let total_len = lock.samples.len();
+
+                            if new_cursor >= total_len { new_cursor = total_len.saturating_sub(1); }
+
+                            // Cursor setzen
+                            lock.cursor = new_cursor;
+                        }
+                        _ => {}
+                    }
+                }
                 _ => {}
             }
         }
 
-        // Zeit
-        let current_time = start_instant.elapsed().as_secs_f64();
+        // ZEIT BERECHNEN
+        // Wenn pausiert, ist die "aktuelle Zeit" fixiert auf den Start der Pause.
+        // Wenn nicht pausiert, ist es Jetzt minus Startzeitpunkt.
+        let current_now = if paused { pause_start_time } else { Instant::now() };
+
+        // Falls durch Zurückspulen start_instant in der Zukunft liegt, ist Zeit = 0
+        let current_time = if current_now > start_instant {
+            current_now.duration_since(start_instant).as_secs_f64()
+        } else {
+            0.0
+        };
+
+        // Auto-Quit Bedingungen
         if use_timidity {
             if current_time > loop_limit + 1.5 { break 'running; }
         } else if current_time > duration + 1.0 {
-             break 'running; 
+             break 'running;
         }
 
         // Größen holen
         let (w_u32, h_u32) = canvas.output_size()?;
         let w = w_u32 as i32;
         let h = h_u32 as i32;
-        let note_area_h = h - KEYBOARD_HEIGHT;
+        let keyboard_height = KEYBOARD_HEIGHT * w / (WINDOW_WIDTH as i32);
+        let note_area_h = h - keyboard_height;
 
         let visible_time_range = note_area_h as f64 / PIXELS_PER_SECOND;
         let lookahead_time = visible_time_range + 1.0;
@@ -662,7 +746,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             if n.midi_key >= MIN_MIDI && n.midi_key <= MAX_MIDI {
                 let (x, width, _) = get_key_geometry(n.midi_key, w as f32);
-                
+
                 let mut c = n.color;
                 if is_playing {
                     c.r = c.r.saturating_add(60);
@@ -671,9 +755,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 canvas.set_draw_color(c);
-                render_fill_rounded_rect(&mut canvas, 
-                    x as i32 + 1, draw_y as i32, 
-                    width as i32 - 2, note_h as i32, 
+                render_fill_rounded_rect(&mut canvas,
+                    x as i32 + 1, draw_y as i32,
+                    width as i32 - 2, note_h as i32,
                     4, CORNER_ALL).unwrap_or(());
             }
         }
@@ -684,18 +768,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if !is_black_key(m) {
                 let (x, width, _) = get_key_geometry(m, w as f32);
                 let mut c = Color::RGB(220, 220, 220);
-                
+
                 if active_keys[m as usize] {
                     let ac = active_colors[m as usize];
                     c.r = ((ac.r as u16 + 255) / 2) as u8;
                     c.g = ((ac.g as u16 + 255) / 2) as u8;
                     c.b = ((ac.b as u16 + 255) / 2) as u8;
                 }
-                
+
                 canvas.set_draw_color(c);
                 render_fill_rounded_rect(&mut canvas,
                     x as i32, note_area_h,
-                    width as i32 - 1, KEYBOARD_HEIGHT,
+                    width as i32 - 1, keyboard_height,
                     5, CORNER_BL | CORNER_BR).unwrap_or(());
             }
         }
@@ -716,13 +800,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 canvas.set_draw_color(c);
                 render_fill_rounded_rect(&mut canvas,
                     x as i32, note_area_h,
-                    width as i32, (KEYBOARD_HEIGHT as f32 * 0.65) as i32,
+                    width as i32, (keyboard_height as f32 * 0.65) as i32,
                     3, CORNER_BL | CORNER_BR).unwrap_or(());
             }
         }
 
         canvas.present();
     }
-
     Ok(())
 }
