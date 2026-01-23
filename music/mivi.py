@@ -3,7 +3,7 @@
 # Mivi -- Ein MIDI-Synthesizer und -Visualizer
 # ======================================================================
 #
-# Version vom 15. Januar 2026.
+# Version vom 23. Januar 2026.
 #
 # BESCHREIBUNG:
 # Dieses Programm liest Standard-MIDI-Dateien (.mid), parst deren
@@ -57,6 +57,7 @@ import subprocess
 import argparse
 import io
 import platform
+import time
 
 # ======================================================================
 # KLASSE: Minimaler MIDI-Parser
@@ -69,7 +70,7 @@ class MidiParser:
         self.ticks_per_beat = 480
         self.tracks_data = []  # Liste von Listen mit Events
         self.tempo_map = []    # [(abs_tick, tempo_in_us_per_beat)]
-        
+
         try:
             with open(self.filename, 'rb') as f:
                 self._parse_file(f)
@@ -95,7 +96,7 @@ class MidiParser:
         chunk_type = f.read(4)
         if chunk_type != b'MThd':
             raise ValueError("Kein gültiges MIDI-File (MThd fehlt)")
-        
+
         _length = self._read_int_be(f, 4)
         _format = self._read_int_be(f, 2)
         num_tracks = self._read_int_be(f, 2)
@@ -137,13 +138,13 @@ class MidiParser:
         abs_tick = 0
         running_status = 0
         events = []
-        
+
         while f.tell() < track_end:
             delta = self._read_variable_length(f)
             abs_tick += delta
-            
+
             byte = ord(f.read(1))
-            
+
             if byte >= 0x80:
                 status = byte
                 running_status = status
@@ -158,10 +159,10 @@ class MidiParser:
                 # F3 (Song Select): 1 Datenbyte
                 data_bytes = {0xF1: 1, 0xF2: 2, 0xF3: 1}
                 f.read(data_bytes[status])
-                # WICHTIG: System Messages löschen Running Status laut Spec nicht zwingend, 
+                # WICHTIG: System Messages löschen Running Status laut Spec nicht zwingend,
                 # aber Channel Messages erwarten Status im Bereich 0x80-0xEF.
                 # Sicherheitshalber hier running_status ungültig machen, falls implementiert.
-                running_status = 0 
+                running_status = 0
             elif status >= 0xF8:
                 # Realtime Messages (Clock, Start, Stop...) werden ignoriert
                 # Sie haben KEINE Datenbytes. Nichts tun.
@@ -170,7 +171,7 @@ class MidiParser:
             if 0x80 <= status <= 0xEF:
                 channel = status & 0x0F
                 cmd = status & 0xF0
-                
+
                 if cmd == 0x80: # Note Off
                     note = ord(f.read(1))
                     vel = ord(f.read(1))
@@ -195,7 +196,7 @@ class MidiParser:
                 type_code = ord(f.read(1))
                 length = self._read_variable_length(f)
                 data = f.read(length)
-                
+
                 if type_code == 0x51: # Tempo
                     microseconds = int.from_bytes(data, byteorder='big')
                     self.tempo_map.append((abs_tick, microseconds))
@@ -207,15 +208,15 @@ class MidiParser:
     def _tick_to_seconds(self, target_tick):
         current_time = 0.0
         current_tick = 0
-        current_micros_per_beat = 500000 
-        
+        current_micros_per_beat = 500000
+
         for map_tick, tempo in self.tempo_map:
             if map_tick > target_tick: break
             tick_diff = map_tick - current_tick
             current_time += tick_diff * (current_micros_per_beat / 1000000.0) / self.ticks_per_beat
             current_tick = map_tick
             current_micros_per_beat = tempo
-            
+
         tick_diff = target_tick - current_tick
         current_time += tick_diff * (current_micros_per_beat / 1000000.0) / self.ticks_per_beat
         return current_time
@@ -226,29 +227,29 @@ class MidiParser:
         Format Note: {'midi': 60, 'start': 1.2, 'dur': 0.5, 'vel': 100}
         """
         processed_tracks = []
-                
+
         channel_colors = {
             0: (0, 220, 220), 1: (255, 0, 200), 2: (255, 220, 0),
             3: (0, 200, 100), 9: (150, 150, 150) # Drums
         }
-        
+
         for track_events in self.tracks_data:
             notes = []
             active_notes = {} # (channel, note) -> (start_tick, velocity)
             track_color = (200, 200, 200)
             track_channel = 0
-            
+
             for event in track_events:
                 evt_type = event['type']
                 tick = event['tick']
-                
+
                 if evt_type == 'note_on':
                     key = (event['ch'], event['note'])
                     active_notes[key] = (tick, event['vel'])
-                    
+
                     if track_color == (200, 200, 200):
                         track_channel = event['ch']
-                        track_color = channel_colors.get(event['ch'], 
+                        track_color = channel_colors.get(event['ch'],
                             ((event['ch'] * 50) % 255, (event['ch'] * 80) % 255, 200))
 
                 elif evt_type == 'note_off':
@@ -259,8 +260,8 @@ class MidiParser:
                         end_sec = self._tick_to_seconds(tick)
                         duration = end_sec - start_sec
 
-                        note_color = channel_colors.get(event['ch'], 
-                            ((event['ch'] * 50) % 255, (event['ch'] * 80) % 255, 200))                        
+                        note_color = channel_colors.get(event['ch'],
+                            ((event['ch'] * 50) % 255, (event['ch'] * 80) % 255, 200))
                         notes.append({
                             'midi': event['note'],
                             'start': start_sec,
@@ -269,10 +270,10 @@ class MidiParser:
                             'ch': event['ch'],
                             'color': note_color
                         })
-            
+
             if notes:
                 processed_tracks.append({'notes': notes, 'color': track_color, 'channel': track_channel})
-                
+
         return processed_tracks
 
 # ======================================================================
@@ -285,49 +286,49 @@ class MidiSynth:
         self.base_overtones = [1.0, 0.5, 0.3, 0.1]
         self.attack_time = 0.05
         self.release_time = 0.1
-    
+
     def _midi_to_freq(self, midi_note):
         return 440.0 * (2 ** ((midi_note - 69) / 12.0))
 
     def _generate_wave(self, freq, duration_sec, velocity=127, overtones=None):
         if freq <= 0: return None
         if overtones is None: overtones = self.base_overtones
-        
+
         # Velocity als Lautstärke (0.0 bis 1.0)
         gain = (velocity / 127.0) * 0.5 # Headroom lassen
-        
+
         total_time = duration_sec + self.release_time
         num_samples = int(total_time * self.sample_rate)
-        
+
         # Zeitvektor
         t = np.linspace(0, total_time, num_samples, endpoint=False)
         signal = np.zeros(num_samples)
-        
+
         # Additive Synthese
         for i, intensity in enumerate(overtones):
             harmonic_freq = freq * (i + 1)
             # Nyquist-Grenze beachten
             if harmonic_freq < self.sample_rate / 2:
                 signal += intensity * np.sin(2 * np.pi * harmonic_freq * t)
-        
+
         # Normalisieren durch Summe der Obertöne
         signal /= np.sum(overtones)
         signal *= gain
-        
+
         # ADSR Envelope (simpel: Attack, Sustain, Release)
         envelope = np.ones(num_samples)
-        
+
         # Attack
         n_attack = int(self.attack_time * self.sample_rate)
         if n_attack > num_samples: n_attack = num_samples
         envelope[:n_attack] = np.linspace(0, 1, n_attack)
-        
+
         # Release (am Ende der Note)
         n_sustain_end = int(duration_sec * self.sample_rate)
         if n_sustain_end < num_samples:
             len_release = num_samples - n_sustain_end
             envelope[n_sustain_end:] = np.linspace(1, 0, len_release)
-            
+
         return signal * envelope
 
     def generate_track_audio(self, notes, channel_id):
@@ -349,21 +350,21 @@ class MidiSynth:
             # "Streicher/Orgel"-ähnlich
             current_overtones = [0.8, 0.8, 0.5, 0.2]
             self.release_time = 0.3
-            
+
         # Gesamtlänge berechnen
         last_end = max(n['start'] + n['dur'] for n in notes)
         total_len_sec = last_end + self.release_time + 1.0
         total_samples = int(total_len_sec * self.sample_rate)
-        
+
         buffer = np.zeros(total_samples, dtype=np.float32)
-        
-        # Performance Warnung bei vielen Noten
-        
+
+        # Performance-Warnung bei vielen Noten
+
         for i, note in enumerate(notes):
             midi = note['midi']
 
             # Ignoriere Keyswitches und unhörbare Noten
-            # if midi < 12: 
+            # if midi < 12:
             #     continue
 
             actual_ch = note.get('ch', channel_id)
@@ -379,11 +380,11 @@ class MidiSynth:
             if wave_data is not None:
                 start_s = int(note['start'] * self.sample_rate)
                 end_s = start_s + len(wave_data)
-                
+
                 # Buffer erweitern falls nötig (sollte durch Vorberechnung selten passieren)
                 if end_s > len(buffer):
                     buffer = np.pad(buffer, (0, end_s - len(buffer)))
-                
+
                 buffer[start_s:end_s] += wave_data
 
         return buffer
@@ -462,40 +463,67 @@ def generate_wav_with_tool(midi_path, output_wav, args):
 # KLASSE: Visualisierung
 # Kombiniert: Init auf Stereo (für Timidity), Loop über Dict-Structure
 # ======================================================================
+
+# Hilfsfunktion: WAV in RAM laden als Numpy Array (int16)
+def load_wav_to_numpy(filename):
+    with wave.open(filename, 'rb') as wf:
+        channels = wf.getnchannels()
+        rate = wf.getframerate()
+        n_frames = wf.getnframes()
+        raw_data = wf.readframes(n_frames)
+
+        # In Numpy Array wandeln (int16)
+        audio_arr = np.frombuffer(raw_data, dtype=np.int16)
+
+        # Der Mixer ist auf Stereo eingestellt. Wir müssen sicherstellen,
+        # dass das Array immer das Format (N, 2) hat.
+        if channels == 2:
+            # Stereo-Datei: Einfach Reshapen
+            audio_arr = audio_arr.reshape(-1, 2)
+        elif channels == 1:
+            # Mono-Datei (Interner Synth):
+            # Wir müssen aus (N,) ein (N, 2) machen.
+            # Das erreichen wir, indem wir das Mono-Signal für L und R duplizieren.
+            audio_arr = np.column_stack((audio_arr, audio_arr))
+
+        return audio_arr, rate
+
 class Visualizer:
     def __init__(self, width=1200, height=800):
         pygame.init()
-        # Audio init: Channels=2 für Stereokompatibilität mit Timidity.
-        # Interne Mono-WAVs werden von Pygame automatisch zentriert.
+        # Mixer Init: Wir erhöhen den Puffer leicht für Stabilität
         pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
-        
+
         self.width = width
         self.height = height
         self.screen = pygame.display.set_mode((width, height),
             pygame.RESIZABLE | pygame.SCALED)
-        pygame.display.set_caption("Mivi – MIDI visualizer")
-        
+        pygame.display.set_caption("Mivi")
+
         self.clock = pygame.time.Clock()
         self.is_running = True
-        
-        self.pixels_per_second = 150 
+
+        self.pixels_per_second = 150
         self.keyboard_height = 120
         self.note_area_height = self.height - self.keyboard_height
-        
+
         self.min_midi = 21  # A0
         self.max_midi = 108 # C8
-        
         self._init_keyboard_layout()
+
+        # Audio-Daten im RAM
+        self.audio_array = None
+        self.sample_rate = 44100
+        self.current_sound_obj = None # Das aktuell abspielende Sound-Objekt
 
     def _init_keyboard_layout(self):
         white_key_count = 0
         for m in range(self.min_midi, self.max_midi + 1):
             if not self._is_black_key(m):
                 white_key_count += 1
-        
         self.wk_width = self.width / white_key_count
         self.bk_width = self.wk_width * 0.65
-        
+
     def _is_black_key(self, midi_note):
         return (midi_note % 12) in [1, 3, 6, 8, 10]
 
@@ -506,37 +534,131 @@ class Visualizer:
                 current_wk_index += 1
         x = current_wk_index * self.wk_width
         if self._is_black_key(midi_note):
-            return x - (self.bk_width / 2) 
+            return x - (self.bk_width / 2)
         return x
 
-    def run(self, tracks_data, wav_file):
+    def _play_from_offset(self, start_time_sec):
+        """
+        Erstellt ein neues Sound-Objekt, das exakt ab start_time_sec beginnt.
+        Das imitiert den Pointer-Zugriff aus C.
+        """
+        # Vorheriges Audio stoppen
+        if self.current_sound_obj:
+            self.current_sound_obj.stop()
+            self.current_sound_obj = None
+
+        start_frame = int(start_time_sec * self.sample_rate)
+
+        # Bounds Check
+        if start_frame >= len(self.audio_array):
+            return # Ende erreicht
+
+        # Array Slicing: Erstellt eine "View" auf die Daten (sehr schnell, kaum RAM Kopie)
+        # Wenn Array Stereo ist: audio_array[start_frame:] behält Dimensionen korrekt
+        sliced_array = self.audio_array[start_frame:]
+
         try:
-            pygame.mixer.music.load(wav_file)
-            pygame.mixer.music.play()
-        except pygame.error as e:
-            print(f"Konnte Audio nicht laden: {e}")
+            # Sound Objekt aus Array erstellen
+            self.current_sound_obj = pygame.sndarray.make_sound(sliced_array)
+            self.current_sound_obj.play()
+        except Exception as e:
+            print(f"Audio Error: {e}")
+
+    def run(self, tracks_data, wav_file):
+        print("Lade Audio in RAM...")
+        try:
+            self.audio_array, self.sample_rate = load_wav_to_numpy(wav_file)
+            print(f"Audio geladen: {len(self.audio_array)} Samples @ {self.sample_rate}Hz")
+        except Exception as e:
+            print(f"Fehler beim Laden der WAV: {e}")
             return
 
-        start_ticks = pygame.time.get_ticks()
-        
+        # Gesamtdauer berechnen für sauberes Clamping am Ende
+        total_duration = len(self.audio_array) / self.sample_rate
+
+        # Initiale Wiedergabe
+        current_time = 0.0
+        self._play_from_offset(current_time)
+
+        # Anker setzen: "Der Song startete (virtuell) jetzt gerade"
+        start_timestamp = time.perf_counter()
+
+        is_paused = False
+
         while self.is_running:
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    fade_ms = 200 # 200 ms Ausblendzeit
-                    pygame.mixer.music.fadeout(fade_ms)
-                    pygame.time.delay(fade_ms + 800)
+                if event.type == pygame.QUIT or (
+                    event.type == pygame.KEYDOWN and
+                    event.key == pygame.K_ESCAPE):
+                    if self.current_sound_obj:
+                        self.current_sound_obj.fadeout(200)
+                    pygame.time.delay(1000)
                     # Kurz warten, damit der Fade hörbar ist;
                     # noch 800 ms hinzu, um Knistern zu vermeiden
                     self.is_running = False
 
-            if pygame.mixer.music.get_busy():
-                current_time = pygame.mixer.music.get_pos() / 1000.0
-            else:
-                current_time = (pygame.time.get_ticks() - start_ticks) / 1000.0
+                elif event.type == pygame.KEYDOWN:
+                    # --- PAUSE (K / SPACE) ---
+                    if event.key == pygame.K_k or event.key == pygame.K_SPACE:
+                        if is_paused:
+                            # RESUME (Pause beenden)
+                            # Wir wollen genau bei 'current_time' weitermachen.
+                            # Wir setzen den Anker neu, als ob der Song genau
+                            # vor 'current_time' Sekunden gestartet wäre.
+                            start_timestamp = time.perf_counter() - current_time
+                            self._play_from_offset(current_time)
+                            is_paused = False
+                        else:
+                            # PAUSE
+                            if self.current_sound_obj: self.current_sound_obj.stop()
+                            # Wir merken uns einfach nur, dass wir stehen geblieben sind.
+                            # 'current_time' bleibt auf dem letzten Wert stehen.
+                            is_paused = True
 
+                    # --- SEEKING (J / L / ARROWS) ---
+                    elif event.key in [pygame.K_j, pygame.K_l, pygame.K_LEFT, pygame.K_RIGHT]:
+                        jump = -5.0 if (event.key == pygame.K_j or event.key == pygame.K_LEFT) else 5.0
+
+                        # 1. Ziel berechnen
+                        target_time = current_time + jump
+
+                        # 2. Clamping (Begrenzen auf 0 ... Ende)
+                        if target_time < 0: target_time = 0
+                        if target_time > total_duration: target_time = total_duration
+
+                        # 3. Zeit anwenden
+                        current_time = target_time
+
+                        if not is_paused:
+                            # Wenn wir laufen, müssen wir Audio und Anker sofort aktualisieren.
+                            # Neuer Anker: Damit (perf_counter - start) exakt target_time ergibt.
+                            start_timestamp = time.perf_counter() - current_time
+                            self._play_from_offset(current_time)
+                        else:
+                            # Wenn pausiert: Nur die visuelle Zeit (current_time) ändern.
+                            # Der Anker wird erst beim "Unpause" (siehe oben) neu gesetzt.
+                            pass
+
+            # --- ZEITBERECHNUNG ---
+            if not is_paused:
+                # Standard-Lauf: Zeit ist Differenz zum Anker
+                current_time = time.perf_counter() - start_timestamp
+
+                # Auto-Quit am Ende
+                # if current_time > total_duration + 1.0:
+                #     self.is_running = False
+
+                # Parken am Ende statt Auto-Quit
+                if current_time >= total_duration:
+                    current_time = total_duration
+                    is_paused = True
+                    if self.current_sound_obj:
+                        self.current_sound_obj.stop()
+
+            # --- RENDERING ---
             self.screen.fill((30, 30, 35))
-            active_midi_notes = {} 
-            
+            active_midi_notes = {}
+
             # Noten zeichnen. Erwartet das Dict-Format vom
             # Parser ('notes', 'color', 'channel')
             for track in tracks_data:
@@ -545,42 +667,42 @@ class Visualizer:
                 if isinstance(track, dict):
                     events = track['notes']
                     color = track['color']
-                else: 
+                else:
                     # Fallback falls jemand den Parser austauscht
                     # auf Tuple
                     events = track[0]
                     color = track[1]
-                
+
                 for note in events:
-                    if note['start'] > current_time + 5.0: continue 
+                    if note['start'] > current_time + 5.0: continue
                     if (note['start'] + note['dur']) < current_time - 1.0: continue
 
                     time_diff = note['start'] - current_time
                     note_y = self.note_area_height - (time_diff * self.pixels_per_second)
                     note_h = note['dur'] * self.pixels_per_second
-                    
                     draw_y = note_y - note_h
-                    
+
                     if draw_y < self.height and (draw_y + note_h) > 0:
                         midi = note['midi']
                         if midi < self.min_midi or midi > self.max_midi: continue
-                        
+
                         x = self._get_x_pos(midi)
                         w = self.bk_width if self._is_black_key(midi) else self.wk_width
-                        
+
                         is_active = note['start'] <= current_time <= (note['start'] + note['dur'])
-                        # draw_color = note.get('color', color)
                         base_note_color = note.get('color', color)
+
                         if is_active:
                             active_midi_notes[midi] = base_note_color
                             draw_color = tuple(min(255, c + 60) for c in base_note_color)
                         else:
                             draw_color = base_note_color
-                        
+
                         pygame.draw.rect(self.screen, draw_color,
                             (x + 1, draw_y, w - 2, note_h), border_radius=4)
 
             self._draw_keyboard(active_midi_notes)
+
             pygame.display.flip()
             self.clock.tick(60)
         pygame.quit()
@@ -595,12 +717,12 @@ class Visualizer:
                 if m in active_notes:
                     base_c = active_notes[m]
                     fill_color = tuple(min(255, c + 100) for c in base_c)
-                
+
                 pygame.draw.rect(self.screen, fill_color,
                     (x, self.note_area_height, self.wk_width - 1, self.keyboard_height),
                     border_radius=0, border_bottom_left_radius=5, border_bottom_right_radius=5)
                 wk_index += 1
-        
+
         # Schwarze Tasten
         for m in range(self.min_midi, self.max_midi + 1):
             if self._is_black_key(m):
@@ -630,7 +752,7 @@ if __name__ == "__main__":
     parser_args.add_argument("-fs", "--fluidsynth", action="store_true", help="Benutze 'fluidsynth' statt internem Synth")
     parser_args.add_argument("-b", "--bpm", type=float, help="Erzwinge eine feste BPM (überschreibt Tempo-Events)")
     parser_args.add_argument("-u", "--use", action="store_true", help="Gegebene WAV-Datei verwenden.")
-    
+
     args = parser_args.parse_args()
     midi_file = args.filenames[0]
 
@@ -675,7 +797,7 @@ if __name__ == "__main__":
             notes = track['notes']
             channel = track['channel']
             if not notes: continue
-            
+
             print(f"  Synthetisiere Spur {i+1}/{len(tracks_struct)} (Ch {channel}, {len(notes)} Noten)...")
             buf = synth.generate_track_audio(notes, channel)
             audio_buffers.append(buf)
