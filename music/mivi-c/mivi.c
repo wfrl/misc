@@ -1,6 +1,6 @@
 /* ==================================================================
  * Mivi -- Ein MIDI-Visualizer und Synthesizer (Portierung auf C)
- * Version 2026-01-22
+ * Version 2026-01-24
  * ================================================================== */
 
 #include <stdio.h>
@@ -597,8 +597,10 @@ typedef struct {
     int active_keys[128];
       /* Aktive Tasten merken für Visualisierung */
     SDL_Color active_colors[128];
+    int fullscreen;
 
     /* Ressourcen */
+    SDL_Window *win;
     SDL_AudioDeviceID dev;
     AudioContext ctx;
     size_t note_count;
@@ -628,17 +630,27 @@ void handle_input(Env *env) {
                         SDL_PauseAudioDevice(env->dev, 0); /* Audio fortsetzen */
                     }
                     break;
-                case SDLK_j: /* Zurück (-5s) */
-                case SDLK_l: /* Vor (+5s) */
+                case SDLK_j: /* Zurück (-10s) */
+                case SDLK_l: /* Vor (+10s) */
                 case SDLK_LEFT:
                 case SDLK_RIGHT:
+                case SDLK_COMMA:
+                case SDLK_PERIOD:
                     {
                         /* Um die Zeit zu ändern, manipulieren wir den start_counter.
                            start_counter erhöhen = Zeit läuft zurück.
                            start_counter verringern = Zeit läuft vor. */
-                        Uint64 jump_ticks = env->frequency * 5;
+                        SDL_Keycode sym = ev.key.keysym.sym;
+                        Uint64 jump_ticks;
+                        if (sym == SDLK_COMMA || sym == SDLK_PERIOD) {
+                            jump_ticks = env->frequency * 1;
+                        } else if (sym == SDLK_LEFT || sym == SDLK_RIGHT) {
+                            jump_ticks = env->frequency * 4;
+                        } else {
+                            jump_ticks = env->frequency * 10;
+                        }
 
-                        if (ev.key.keysym.sym == SDLK_j || ev.key.keysym.sym == SDLK_LEFT) {
+                        if (sym == SDLK_j || sym == SDLK_LEFT || sym == SDLK_COMMA) {
                             env->start_counter += jump_ticks;
                         } else {
                             env->start_counter -= jump_ticks;
@@ -648,19 +660,52 @@ void handle_input(Env *env) {
                         /* Berechnen, wo wir jetzt wären */
                         Uint64 ref_time = env->paused ? env->pause_start_counter : now_counter;
 
-                        /* Schutz gegen negative Zeit (start_counter liegt in Zukunft) */
+                        /* Clamping am Anfang (Zeit < 0 verhindern) */
+                        /* (start_counter liegt in Zukunft) */
                         if (env->start_counter > ref_time) env->start_counter = ref_time;
+
+                        /* Clamping am Ende (Zeit > Songlänge verhindern) */
+                        /* Wir berechnen die theoretische Zeit */
+                        double current_sim_time = (double)(ref_time - env->start_counter) / env->frequency;
+
+                        /* Das Limit berechnen wir anhand der Audio-Buffer-Größe + Puffer (wie in main) */
+                        double audio_duration = (double)env->ctx.total_samples / SAMPLE_RATE;
+                        double end_limit = audio_duration + 1.5;
+
+                        if (current_sim_time > end_limit) {
+                            /* Wir sind zu weit gesprungen.
+                             * Wir müssen start_counter so setzen, dass:
+                             * (ref_time - start_counter) / freq == end_limit
+                             * => start_counter = ref_time - (end_limit * freq)
+                             */
+                             env->start_counter = ref_time - (Uint64)(end_limit * env->frequency);
+                        }
 
                         double new_time = (double)(ref_time - env->start_counter) / env->frequency;
 
                         /* Cursor setzen */
                         long new_cursor = (long)(new_time * SAMPLE_RATE);
                         if (new_cursor < 0) new_cursor = 0;
-                        if ((size_t)new_cursor >= env->ctx.total_samples) new_cursor = env->ctx.total_samples - 1;
+
+                        /* Sicherstellen, dass wir nicht aus dem Array lesen */
+                        if ((size_t)new_cursor >= env->ctx.total_samples) {
+                            if (env->ctx.total_samples > 0)
+                                new_cursor = env->ctx.total_samples; /* Parken genau am Ende (Stille) */
+                            else
+                                new_cursor = 0;
+                        }
 
                         /* Atomares Update des Cursors (volatile) */
                         env->ctx.play_cursor = (size_t)new_cursor;
                     }
+                    break;
+                case SDLK_f:
+                    if (env->fullscreen) {
+                        SDL_SetWindowFullscreen(env->win, 0);
+                    } else {
+                        SDL_SetWindowFullscreen(env->win, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                    }
+                    env->fullscreen = 1 - env->fullscreen;
                     break;
             }
         }
@@ -761,6 +806,7 @@ int main(int argc, char **argv) {
     const char *midifile = NULL;
     int use_timidity = 0;
     Env env;
+    env.fullscreen = 0;
 
     /* Argumente parsen */
     for (int i = 1; i < argc; i++) {
@@ -809,11 +855,11 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    SDL_Window *win = SDL_CreateWindow("Mivi",
+    env.win = SDL_CreateWindow("Mivi",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         WINDOW_WIDTH, WINDOW_HEIGHT,
         SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    SDL_Renderer *rend = SDL_CreateRenderer(win, -1,
+    SDL_Renderer *rend = SDL_CreateRenderer(env.win, -1,
         SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     SDL_AudioSpec want, have;
@@ -855,14 +901,35 @@ int main(int argc, char **argv) {
         Uint64 current_counter = env.paused ? env.pause_start_counter : SDL_GetPerformanceCounter();
 
         double current_time = (double)(current_counter - env.start_counter) / env.frequency;
-        if (use_timidity) {
-            if (current_time > loop_limit + 1.5) env.running = 0;
-        } else {
-            if (current_time > duration + 1.0) env.running = 0; /* Auto-Quit am Ende */
+
+        double end_limit = use_timidity ? (loop_limit + 1.5) : (duration + 1.0);
+
+        /* if (current_time > end_limit) env.running = 0; */
+        /* Auto-Quit am Ende */
+
+        /* Wenn das Ende erreicht ist und wir nicht bereits pausiert sind: Parken */
+        if (!env.paused && current_time >= end_limit) {
+            env.paused = 1;
+            SDL_PauseAudioDevice(env.dev, 1); /* Audio stoppen */
+
+            /*
+             * Trick: Wir setzen den Zeitstempel für den Start der Pause so,
+             * dass er rechnerisch genau dem 'end_limit' entspricht.
+             * Wenn man später 'SPACE' drückt oder spult, stimmt die Mathe weiterhin.
+             */
+            env.pause_start_counter = env.start_counter + (Uint64)(end_limit * env.frequency);
+
+            /* Audio-Cursor sicherheitshalber ans Ende setzen */
+            if (env.ctx.total_samples > 0) {
+                env.ctx.play_cursor = env.ctx.total_samples;
+            }
+
+            /* Visuelle Zeit auf das Limit festsetzen */
+            current_time = end_limit;
         }
 
         int w, h;
-        SDL_GetWindowSize(win, &w, &h);
+        SDL_GetWindowSize(env.win, &w, &h);
         int keyboard_height = KEYBOARD_HEIGHT * w / WINDOW_WIDTH;
         int note_area_h = h - keyboard_height;
 
@@ -889,7 +956,7 @@ int main(int argc, char **argv) {
     /* Cleanup */
     SDL_CloseAudioDevice(env.dev);
     SDL_DestroyRenderer(rend);
-    SDL_DestroyWindow(win);
+    SDL_DestroyWindow(env.win);
     SDL_Quit();
     free(env.ctx.pcm_buffer);
     free(notes);

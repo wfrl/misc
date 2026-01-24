@@ -3,7 +3,7 @@
 # Mivi -- Ein MIDI-Synthesizer und -Visualizer
 # ======================================================================
 #
-# Version vom 23. Januar 2026.
+# Version vom 24. Januar 2026.
 #
 # BESCHREIBUNG:
 # Dieses Programm liest Standard-MIDI-Dateien (.mid), parst deren
@@ -491,6 +491,8 @@ def load_wav_to_numpy(filename):
 class Visualizer:
     def __init__(self, width=1200, height=800):
         pygame.init()
+        pygame.key.set_repeat(500, 50)
+
         # Mixer Init: Wir erhöhen den Puffer leicht für Stabilität
         pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
 
@@ -598,8 +600,9 @@ class Visualizer:
                     self.is_running = False
 
                 elif event.type == pygame.KEYDOWN:
+                    key = event.key
                     # --- PAUSE (K / SPACE) ---
-                    if event.key == pygame.K_k or event.key == pygame.K_SPACE:
+                    if key == pygame.K_k or key == pygame.K_SPACE:
                         if is_paused:
                             # RESUME (Pause beenden)
                             # Wir wollen genau bei 'current_time' weitermachen.
@@ -616,8 +619,13 @@ class Visualizer:
                             is_paused = True
 
                     # --- SEEKING (J / L / ARROWS) ---
-                    elif event.key in [pygame.K_j, pygame.K_l, pygame.K_LEFT, pygame.K_RIGHT]:
-                        jump = -5.0 if (event.key == pygame.K_j or event.key == pygame.K_LEFT) else 5.0
+                    elif key in (pygame.K_j, pygame.K_l, pygame.K_LEFT,
+                        pygame.K_RIGHT, pygame.K_COMMA, pygame.K_PERIOD):
+                        jump = (1.0 if key == pygame.K_COMMA or key == pygame.K_PERIOD else
+                                4.0 if key == pygame.K_LEFT  or key == pygame.K_RIGHT else
+                               10.0)
+                        if key == pygame.K_LEFT or key == pygame.K_j or key == pygame.K_COMMA:
+                            jump = -jump
 
                         # 1. Ziel berechnen
                         target_time = current_time + jump

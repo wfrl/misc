@@ -1,7 +1,7 @@
 // =====================================================================
 // Mivi -- Ein MIDI-Synthesizer und -Visualizer (Portierung auf Rust)
 // =====================================================================
-// Version 2026-01-15
+// Version 2026-01-24
 
 use sdl2::audio::{AudioCallback, AudioSpecDesired, AudioCVT};
 use sdl2::event::Event;
@@ -9,7 +9,7 @@ use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 use sdl2::render::Canvas;
-use sdl2::video::Window;
+use sdl2::video::{Window, FullscreenType};
 
 use std::cmp::Ordering;
 use std::env;
@@ -538,6 +538,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     let mut midifile = "";
     let mut use_timidity = false;
+    let mut fullscreen = false;
 
     if args.len() < 2 {
         println!("Verwendung: {} <datei.mid> [-tm]", args[0]);
@@ -610,6 +611,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Damit die Audio-Länge bestimmt wann Ende ist
     let loop_limit = if audio_duration > duration { audio_duration } else { duration };
+    let end_limit = if use_timidity { loop_limit + 1.5 } else { duration + 1.0 };
 
     let mut active_keys = [false; 128];
     let mut active_colors = [Color::RGB(0,0,0); 128];
@@ -639,9 +641,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         },
                         // SPULEN
-                        Keycode::Left | Keycode::J | Keycode::Right | Keycode::L => {
-                            let jump = Duration::from_secs(5);
-                            let is_forward = k == Keycode::Right || k == Keycode::L;
+                        Keycode::Left | Keycode::J | Keycode::Right | Keycode::L |
+                        Keycode::Comma | Keycode::Period => {
+                            let jump = Duration::from_secs(
+                                if k == Keycode::Comma || k == Keycode::Period {1}
+                                else if k == Keycode::Left || k == Keycode::Right {4}
+                                else {10});
+                            let is_forward = k == Keycode::Right || k == Keycode::L || k == Keycode::Period;
 
                             if !is_forward {
                                 // Zurückspulen: Startzeit in die Zukunft schieben -> Differenz wird kleiner
@@ -661,6 +667,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Clampen, falls über den Anfang hinaus
                             // zurückgesprungen wurde
                             if start_instant > ref_time { start_instant = ref_time; }
+
+                            // Clampen gegen Ende (Zeit > end_limit)
+                            let current_diff = ref_time.duration_since(start_instant).as_secs_f64();
+                            if current_diff > end_limit {
+                                // Wir sind zu weit gesprungen.
+                                // Wir setzen start_instant so, dass die Differenz exakt 'end_limit' ist.
+                                // Formel: start = jetzt - limit
+                                start_instant = ref_time - Duration::from_secs_f64(end_limit);
+                            }
 
                             // Schutz gegen negative Zeit (falls Startzeit in Zukunft liegt durch wildes Zurückspulen)
                             let new_time_secs = if ref_time > start_instant {
@@ -685,6 +700,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             // Cursor setzen
                             lock.cursor = new_cursor;
                         }
+                        Keycode::F => {
+                            let res = canvas.window_mut().set_fullscreen(if fullscreen {
+                                FullscreenType::Off
+                            } else {
+                                FullscreenType::Desktop
+                            });
+                            if let Err(_) = res {
+                                println!("Wechsel in den Vollbildmodus nicht möglich.");
+                            } else {
+                                fullscreen = !fullscreen;
+                            }
+                        }
                         _ => {}
                     }
                 }
@@ -704,12 +731,28 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             0.0
         };
 
-        // Auto-Quit Bedingungen
-        if use_timidity {
-            if current_time > loop_limit + 1.5 { break 'running; }
-        } else if current_time > duration + 1.0 {
-             break 'running;
+        // Auto-Quit-Bedingung
+        // if current_time > end_limit { break 'running; }
+
+        // Parken statt Beenden
+        // Wenn das Ende erreicht ist und wir noch nicht pausiert sind
+        if !paused && current_time >= end_limit {
+            paused = true;
+            device.pause(); // Audio stoppen
+
+            // Trick: Wir setzen 'pause_start_time' so, dass die verstrichene Zeit
+            // relativ zu 'start_instant' exakt dem 'end_limit' entspricht.
+            // Formel: pause_start_time = start_instant + end_limit
+            pause_start_time = start_instant + Duration::from_secs_f64(end_limit);
+
+            // Audio-Cursor sicherheitshalber ans Ende schieben (Stille)
+            let mut lock = device.lock();
+            let total_len = lock.samples.len();
+            lock.cursor = total_len;
         }
+        // Visuelle Zeit clampen, damit wir in diesem Frame nicht über das Ziel hinausschießen
+        // (Schattenvariable für current_time erstellen)
+        let current_time = if current_time > end_limit { end_limit } else { current_time };
 
         // Größen holen
         let (w_u32, h_u32) = canvas.output_size()?;
