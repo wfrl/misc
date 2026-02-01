@@ -18,6 +18,7 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
+use std::ops::ControlFlow;
 
 // =====================================================================
 // KONFIGURATION UND KONSTANTEN
@@ -40,7 +41,7 @@ const MAX_MIDI: i32 = 108; // C8
 enum EventType {
     NoteOn,
     NoteOff,
-    SetTempo,
+    SetTempo
 }
 
 #[derive(Debug, Clone)]
@@ -50,7 +51,7 @@ struct MidiEvent {
     channel: u8,
     note: u8,
     velocity: u8,
-    tempo_micros: u32,
+    tempo_micros: u32
 }
 
 #[derive(Debug, Clone)]
@@ -60,7 +61,25 @@ struct Note {
     midi_key: i32,
     _velocity: i32, // Wird nach der Synthese nicht mehr zwingend gebraucht
     _channel: i32,
-    color: Color,
+    color: Color
+}
+
+struct Env {
+    // Ressourcen/Interface
+    canvas: Canvas<Window>,
+    event_pump: sdl2::EventPump,
+    device: sdl2::audio::AudioDevice<SoundProvider>,
+
+    // Zustand
+    start_instant: Instant,
+    pause_start_time: Instant,
+    paused: bool,
+    fullscreen: bool,
+    active_keys: [bool; 128],
+    active_colors: [Color; 128],
+
+    // Unveränderliche Audio-Daten
+    end_limit: f64
 }
 
 // =====================================================================
@@ -69,7 +88,7 @@ struct Note {
 
 struct SoundProvider {
     samples: Vec<i16>,
-    cursor: usize,
+    cursor: usize
 }
 
 impl AudioCallback for SoundProvider {
@@ -529,16 +548,253 @@ fn render_fill_rounded_rect(
     Ok(())
 }
 
+// =====================================================================
+// Eingabe-Handler
+// =====================================================================
+
+fn handle_input(env: &mut Env) -> ControlFlow<()> {
+    for event in env.event_pump.poll_iter() {
+        match event {
+            Event::Quit {..} |
+            Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                return ControlFlow::Break(());
+            },
+            Event::KeyDown { keycode: Some(k), .. } => {
+                match k {
+                    // PAUSE / PLAY
+                    Keycode::Space | Keycode::K => {
+                        env.paused = !env.paused;
+                        if env.paused {
+                            env.pause_start_time = Instant::now();
+                            env.device.pause();
+                        } else {
+                            // Die Zeit, die wir pausiert waren, auf den Start-Zeitpunkt addieren,
+                            // damit der Song nicht visuell nach vorne springt.
+                            let paused_duration = Instant::now().duration_since(env.pause_start_time);
+                            env.start_instant += paused_duration;
+                            env.device.resume();
+                        }
+                    },
+                    // SPULEN
+                    Keycode::Left | Keycode::J | Keycode::Right | Keycode::L |
+                    Keycode::Comma | Keycode::Period => {
+                        let jump = Duration::from_secs(
+                            if k == Keycode::Comma || k == Keycode::Period {1}
+                            else if k == Keycode::Left || k == Keycode::Right {4}
+                            else {10});
+                        let is_forward = k == Keycode::Right || k == Keycode::L || k == Keycode::Period;
+
+                        if !is_forward {
+                            // Zurückspulen: Startzeit in die Zukunft schieben -> Differenz wird kleiner
+                            env.start_instant += jump;
+                        } else {
+                            // Vorspulen: Startzeit in die Vergangenheit schieben -> Differenz wird größer
+                            // checked_sub verhindert Panic, falls wir vor den Programmstart kämen
+                            if let Some(new_start) = env.start_instant.checked_sub(jump) {
+                                env.start_instant = new_start;
+                            }
+                        }
+
+                        // AUDIO SYNCHRONISIEREN
+                        // Berechnen, wo wir zeitlich jetzt wären
+                        let ref_time = if env.paused { env.pause_start_time } else { Instant::now() };
+
+                        // Clampen, falls über den Anfang hinaus
+                        // zurückgesprungen wurde
+                        if env.start_instant > ref_time { env.start_instant = ref_time; }
+
+                        // Clampen gegen Ende (Zeit > end_limit)
+                        let current_diff = ref_time.duration_since(env.start_instant).as_secs_f64();
+                        if current_diff > env.end_limit {
+                            // Wir sind zu weit gesprungen.
+                            // Wir setzen start_instant so, dass die Differenz exakt 'end_limit' ist.
+                            // Formel: start = jetzt - limit
+                            env.start_instant = ref_time - Duration::from_secs_f64(env.end_limit);
+                        }
+
+                        // Schutz gegen negative Zeit (falls Startzeit in Zukunft liegt durch wildes Zurückspulen)
+                        let new_time_secs = if ref_time > env.start_instant {
+                            ref_time.duration_since(env.start_instant).as_secs_f64()
+                        } else {
+                            0.0
+                        };
+
+                        // Cursor berechnen
+                        let mut new_cursor = (new_time_secs * SAMPLE_RATE as f64) as usize;
+
+                        // Bounds Check
+                        // Da pcm_buffer in 'device' gemoved wurde, kennen wir die Länge hier eigentlich nicht direkt,
+                        // außer wir haben sie vorher gespeichert oder nutzen den Lock.
+                        // Oben haben wir `pcm_buffer` an den SoundProvider übergeben.
+                        // Lösung: Wir greifen über den Lock auf die Samples zu.
+                        let mut lock = env.device.lock();
+                        let total_len = lock.samples.len();
+
+                        if new_cursor >= total_len { new_cursor = total_len.saturating_sub(1); }
+
+                        // Cursor setzen
+                        lock.cursor = new_cursor;
+                    }
+                    Keycode::F => {
+                        let res = env.canvas.window_mut().set_fullscreen(if env.fullscreen {
+                            FullscreenType::Off
+                        } else {
+                            FullscreenType::Desktop
+                        });
+                        if let Err(_) = res {
+                            println!("Wechsel in den Vollbildmodus nicht möglich.");
+                        } else {
+                            env.fullscreen = !env.fullscreen;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+    ControlFlow::Continue(())
+}
+
+// =====================================================================
+// Grafik-Ausgabe
+// =====================================================================
+
+fn render_notes(env: &mut Env, notes: &Vec<Note>,
+    w: i32, note_area_h: i32,
+    current_time: f64, lookahead_time: f64
+) {
+    // Noten Zeichnen
+    for n in notes {
+        if n.start_time > current_time + lookahead_time { break; }
+        if (n.start_time + n.duration) < current_time - 1.0 { continue; }
+
+        let time_diff = (n.start_time - current_time) as f32;
+        let note_y = note_area_h as f32 - (time_diff * PIXELS_PER_SECOND as f32);
+        let note_h = (n.duration * PIXELS_PER_SECOND) as f32;
+        let draw_y = note_y - note_h;
+
+        let is_playing = current_time >= n.start_time && current_time < (n.start_time + n.duration);
+        if is_playing {
+            env.active_keys[n.midi_key as usize] = true;
+            env.active_colors[n.midi_key as usize] = n.color;
+        }
+
+        if n.midi_key >= MIN_MIDI && n.midi_key <= MAX_MIDI {
+            let (x, width, _) = get_key_geometry(n.midi_key, w as f32);
+
+            let mut c = n.color;
+            if is_playing {
+                c.r = c.r.saturating_add(60);
+                c.g = c.g.saturating_add(60);
+                c.b = c.b.saturating_add(60);
+            }
+
+            env.canvas.set_draw_color(c);
+            render_fill_rounded_rect(&mut env.canvas,
+                x as i32 + 1, draw_y as i32,
+                width as i32 - 2, note_h as i32,
+                4, CORNER_ALL).unwrap_or(());
+        }
+    }
+}
+
+fn render_keys(env: &mut Env, w: i32, note_area_h: i32, keyboard_height: i32) {
+    // Tastatur Zeichnen
+    // 1. Weiße Tasten
+    for m in MIN_MIDI..=MAX_MIDI {
+        if !is_black_key(m) {
+            let (x, width, _) = get_key_geometry(m, w as f32);
+            let mut c = Color::RGB(220, 220, 220);
+
+            if env.active_keys[m as usize] {
+                let ac = env.active_colors[m as usize];
+                c.r = ((ac.r as u16 + 255) / 2) as u8;
+                c.g = ((ac.g as u16 + 255) / 2) as u8;
+                c.b = ((ac.b as u16 + 255) / 2) as u8;
+            }
+
+            env.canvas.set_draw_color(c);
+            render_fill_rounded_rect(&mut env.canvas,
+                x as i32, note_area_h,
+                width as i32 - 1, keyboard_height,
+                5, CORNER_BL | CORNER_BR).unwrap_or(());
+        }
+    }
+
+    // 2. Schwarze Tasten
+    for m in MIN_MIDI..=MAX_MIDI {
+        if is_black_key(m) {
+            let (x, width, _) = get_key_geometry(m, w as f32);
+            let mut c = Color::RGB(20, 20, 20);
+
+            if env.active_keys[m as usize] {
+                let ac = env.active_colors[m as usize];
+                c.r = ((ac.r as u16 + 100) / 2) as u8;
+                c.g = ((ac.g as u16 + 100) / 2) as u8;
+                c.b = ((ac.b as u16 + 100) / 2) as u8;
+            }
+
+            env.canvas.set_draw_color(c);
+            render_fill_rounded_rect(&mut env.canvas,
+                x as i32, note_area_h,
+                width as i32, (keyboard_height as f32 * 0.65) as i32,
+                3, CORNER_BL | CORNER_BR).unwrap_or(());
+        }
+    }
+}
 
 // =====================================================================
 // MAIN
 // =====================================================================
 
+fn calculate_time(env: &Env) -> (f64, f64) {
+    // Wenn pausiert, ist die "aktuelle Zeit" fixiert auf den Start der Pause.
+    // Wenn nicht pausiert, ist es Jetzt minus Startzeitpunkt.
+    let current_now = if env.paused { env.pause_start_time } else { Instant::now() };
+
+    // Falls durch Zurückspulen start_instant in der Zukunft liegt, ist Zeit = 0
+    let raw_time = if current_now > env.start_instant {
+        current_now.duration_since(env.start_instant).as_secs_f64()
+    } else {
+        0.0
+    };
+    // Visuelle Zeit clampen, damit wir in diesem Frame nicht über das Ziel hinausschießen
+    // (Schattenvariable für current_time erstellen)
+    let current_time = if raw_time > env.end_limit { env.end_limit } else { raw_time };
+    (raw_time, current_time)
+}
+
+fn handle_end(env: &mut Env, raw_time: f64, auto_quit: bool) -> ControlFlow<()> {
+    if auto_quit {
+        // Auto-Quit-Bedingung
+        if raw_time > env.end_limit {return ControlFlow::Break(());}
+    } else {
+        // Parken statt Beenden
+        // Wenn das Ende erreicht ist und wir noch nicht pausiert sind
+        if !env.paused && raw_time >= env.end_limit {
+            env.paused = true;
+            env.device.pause(); // Audio stoppen
+
+            // Trick: Wir setzen 'pause_start_time' so, dass die verstrichene Zeit
+            // relativ zu 'start_instant' exakt dem 'end_limit' entspricht.
+            // Formel: pause_start_time = start_instant + end_limit
+            env.pause_start_time = env.start_instant + Duration::from_secs_f64(env.end_limit);
+
+            // Audio-Cursor sicherheitshalber ans Ende schieben (Stille)
+            let mut lock = env.device.lock();
+            let total_len = lock.samples.len();
+            lock.cursor = total_len;
+        }
+    }
+    ControlFlow::Continue(())
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     let mut midifile = "";
     let mut use_timidity = false;
-    let mut fullscreen = false;
+    let mut auto_quit = false;
 
     if args.len() < 2 {
         println!("Verwendung: {} <datei.mid> [-tm]", args[0]);
@@ -546,10 +802,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     for arg in &args[1..] {
-        if arg == "-tm" {
-            use_timidity = true;
-        } else {
-            midifile = arg;
+        match arg.as_str() {
+            "-tm" => {use_timidity = true;},
+            "-aq" => {auto_quit = true;},
+            _ => {midifile = arg;}
         }
     }
 
@@ -580,182 +836,62 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .resizable()
         .build()?;
 
-    let mut canvas = window.into_canvas()
+    let canvas = window.into_canvas()
         .accelerated()
         .present_vsync()
         .build()?;
 
-    // Audio Setup
+    // Audio-Setup
     let desired_spec = AudioSpecDesired {
         freq: Some(SAMPLE_RATE),
         channels: Some(AUDIO_CHANNELS),
         samples: Some(2048),
     };
 
-    let mut device = audio_subsystem.open_playback(None, &desired_spec, |_spec| {
-        SoundProvider {
-            samples: pcm_buffer,
-            cursor: 0,
-        }
+    let device = audio_subsystem.open_playback(None, &desired_spec, |_spec| {
+        SoundProvider {samples: pcm_buffer, cursor: 0}
     })?;
 
     device.resume();
 
-    // 4. Main Loop
-    let mut event_pump = sdl_context.event_pump()?;
-
-    // ZEITMESSUNG INITIALISIERUNG
-    let mut start_instant = Instant::now();
-    let mut paused = false;
-    let mut pause_start_time = Instant::now(); // Merkt sich, wann Pause gedrückt wurde
+    let event_pump = sdl_context.event_pump()?;
 
     // Damit die Audio-Länge bestimmt wann Ende ist
     let loop_limit = if audio_duration > duration { audio_duration } else { duration };
     let end_limit = if use_timidity { loop_limit + 1.5 } else { duration + 1.0 };
 
-    let mut active_keys = [false; 128];
-    let mut active_colors = [Color::RGB(0,0,0); 128];
+    let mut env = Env {
+        canvas,
+        event_pump,
+        device,
+        start_instant: Instant::now(), // ZEITMESSUNG INITIALISIERUNG
+        pause_start_time: Instant::now(), // Merkt sich, wann Pause gedrückt wurde
+        paused: false,
+        fullscreen: false,
+        active_keys: [false; 128],
+        active_colors: [Color::RGB(0, 0, 0); 128],
+        end_limit,
+    };
 
-    'running: loop {
-        // INPUT HANDLING
-        for event in event_pump.poll_iter() {
-            match event {
-                Event::Quit {..} |
-                Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
-                    break 'running
-                },
-                Event::KeyDown { keycode: Some(k), .. } => {
-                    match k {
-                        // PAUSE / PLAY
-                        Keycode::Space | Keycode::K => {
-                            paused = !paused;
-                            if paused {
-                                pause_start_time = Instant::now();
-                                device.pause();
-                            } else {
-                                // Die Zeit, die wir pausiert waren, auf den Start-Zeitpunkt addieren,
-                                // damit der Song nicht visuell nach vorne springt.
-                                let paused_duration = Instant::now().duration_since(pause_start_time);
-                                start_instant += paused_duration;
-                                device.resume();
-                            }
-                        },
-                        // SPULEN
-                        Keycode::Left | Keycode::J | Keycode::Right | Keycode::L |
-                        Keycode::Comma | Keycode::Period => {
-                            let jump = Duration::from_secs(
-                                if k == Keycode::Comma || k == Keycode::Period {1}
-                                else if k == Keycode::Left || k == Keycode::Right {4}
-                                else {10});
-                            let is_forward = k == Keycode::Right || k == Keycode::L || k == Keycode::Period;
-
-                            if !is_forward {
-                                // Zurückspulen: Startzeit in die Zukunft schieben -> Differenz wird kleiner
-                                start_instant += jump;
-                            } else {
-                                // Vorspulen: Startzeit in die Vergangenheit schieben -> Differenz wird größer
-                                // checked_sub verhindert Panic, falls wir vor den Programmstart kämen
-                                if let Some(new_start) = start_instant.checked_sub(jump) {
-                                    start_instant = new_start;
-                                }
-                            }
-
-                            // AUDIO SYNCHRONISIEREN
-                            // Berechnen, wo wir zeitlich jetzt wären
-                            let ref_time = if paused { pause_start_time } else { Instant::now() };
-
-                            // Clampen, falls über den Anfang hinaus
-                            // zurückgesprungen wurde
-                            if start_instant > ref_time { start_instant = ref_time; }
-
-                            // Clampen gegen Ende (Zeit > end_limit)
-                            let current_diff = ref_time.duration_since(start_instant).as_secs_f64();
-                            if current_diff > end_limit {
-                                // Wir sind zu weit gesprungen.
-                                // Wir setzen start_instant so, dass die Differenz exakt 'end_limit' ist.
-                                // Formel: start = jetzt - limit
-                                start_instant = ref_time - Duration::from_secs_f64(end_limit);
-                            }
-
-                            // Schutz gegen negative Zeit (falls Startzeit in Zukunft liegt durch wildes Zurückspulen)
-                            let new_time_secs = if ref_time > start_instant {
-                                ref_time.duration_since(start_instant).as_secs_f64()
-                            } else {
-                                0.0
-                            };
-
-                            // Cursor berechnen
-                            let mut new_cursor = (new_time_secs * SAMPLE_RATE as f64) as usize;
-
-                            // Bounds Check
-                            // Da pcm_buffer in 'device' gemoved wurde, kennen wir die Länge hier eigentlich nicht direkt,
-                            // außer wir haben sie vorher gespeichert oder nutzen den Lock.
-                            // Oben haben wir `pcm_buffer` an den SoundProvider übergeben.
-                            // Lösung: Wir greifen über den Lock auf die Samples zu.
-                            let mut lock = device.lock();
-                            let total_len = lock.samples.len();
-
-                            if new_cursor >= total_len { new_cursor = total_len.saturating_sub(1); }
-
-                            // Cursor setzen
-                            lock.cursor = new_cursor;
-                        }
-                        Keycode::F => {
-                            let res = canvas.window_mut().set_fullscreen(if fullscreen {
-                                FullscreenType::Off
-                            } else {
-                                FullscreenType::Desktop
-                            });
-                            if let Err(_) = res {
-                                println!("Wechsel in den Vollbildmodus nicht möglich.");
-                            } else {
-                                fullscreen = !fullscreen;
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-                _ => {}
-            }
+    // 4. Main Loop
+    loop {
+        // Eingabeverarbeitung
+        match handle_input(&mut env) {
+            ControlFlow::Continue(()) => {},
+            ControlFlow::Break(()) => break
         }
 
-        // ZEIT BERECHNEN
-        // Wenn pausiert, ist die "aktuelle Zeit" fixiert auf den Start der Pause.
-        // Wenn nicht pausiert, ist es Jetzt minus Startzeitpunkt.
-        let current_now = if paused { pause_start_time } else { Instant::now() };
+        // Zeit berechnen
+        let (raw_time, current_time) = calculate_time(&env);
 
-        // Falls durch Zurückspulen start_instant in der Zukunft liegt, ist Zeit = 0
-        let current_time = if current_now > start_instant {
-            current_now.duration_since(start_instant).as_secs_f64()
-        } else {
-            0.0
-        };
-
-        // Auto-Quit-Bedingung
-        // if current_time > end_limit { break 'running; }
-
-        // Parken statt Beenden
-        // Wenn das Ende erreicht ist und wir noch nicht pausiert sind
-        if !paused && current_time >= end_limit {
-            paused = true;
-            device.pause(); // Audio stoppen
-
-            // Trick: Wir setzen 'pause_start_time' so, dass die verstrichene Zeit
-            // relativ zu 'start_instant' exakt dem 'end_limit' entspricht.
-            // Formel: pause_start_time = start_instant + end_limit
-            pause_start_time = start_instant + Duration::from_secs_f64(end_limit);
-
-            // Audio-Cursor sicherheitshalber ans Ende schieben (Stille)
-            let mut lock = device.lock();
-            let total_len = lock.samples.len();
-            lock.cursor = total_len;
+        // Verhalten am Ende der MIDI-Datei
+        match handle_end(&mut env, raw_time, auto_quit) {
+            ControlFlow::Continue(()) => {},
+            ControlFlow::Break(()) => break
         }
-        // Visuelle Zeit clampen, damit wir in diesem Frame nicht über das Ziel hinausschießen
-        // (Schattenvariable für current_time erstellen)
-        let current_time = if current_time > end_limit { end_limit } else { current_time };
 
-        // Größen holen
-        let (w_u32, h_u32) = canvas.output_size()?;
+        // Geometrie-Parameter berechnen
+        let (w_u32, h_u32) = env.canvas.output_size()?;
         let w = w_u32 as i32;
         let h = h_u32 as i32;
         let keyboard_height = KEYBOARD_HEIGHT * w / (WINDOW_WIDTH as i32);
@@ -765,90 +901,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let lookahead_time = visible_time_range + 1.0;
 
         // Zeichnen
-        canvas.set_draw_color(Color::RGB(30, 30, 35));
-        canvas.clear();
+        env.canvas.set_draw_color(Color::RGB(30, 30, 35));
+        env.canvas.clear();
 
         // Reset Keys
-        active_keys.fill(false);
+        env.active_keys.fill(false);
 
-        // Noten Zeichnen
-        for n in &notes {
-            if n.start_time > current_time + lookahead_time { break; }
-            if (n.start_time + n.duration) < current_time - 1.0 { continue; }
+        render_notes(&mut env, &notes, w, note_area_h, current_time, lookahead_time);
+        render_keys(&mut env, w, note_area_h, keyboard_height);
 
-            let time_diff = (n.start_time - current_time) as f32;
-            let note_y = note_area_h as f32 - (time_diff * PIXELS_PER_SECOND as f32);
-            let note_h = (n.duration * PIXELS_PER_SECOND) as f32;
-            let draw_y = note_y - note_h;
-
-            let is_playing = current_time >= n.start_time && current_time < (n.start_time + n.duration);
-            if is_playing {
-                active_keys[n.midi_key as usize] = true;
-                active_colors[n.midi_key as usize] = n.color;
-            }
-
-            if n.midi_key >= MIN_MIDI && n.midi_key <= MAX_MIDI {
-                let (x, width, _) = get_key_geometry(n.midi_key, w as f32);
-
-                let mut c = n.color;
-                if is_playing {
-                    c.r = c.r.saturating_add(60);
-                    c.g = c.g.saturating_add(60);
-                    c.b = c.b.saturating_add(60);
-                }
-
-                canvas.set_draw_color(c);
-                render_fill_rounded_rect(&mut canvas,
-                    x as i32 + 1, draw_y as i32,
-                    width as i32 - 2, note_h as i32,
-                    4, CORNER_ALL).unwrap_or(());
-            }
-        }
-
-        // Tastatur Zeichnen
-        // 1. Weiße Tasten
-        for m in MIN_MIDI..=MAX_MIDI {
-            if !is_black_key(m) {
-                let (x, width, _) = get_key_geometry(m, w as f32);
-                let mut c = Color::RGB(220, 220, 220);
-
-                if active_keys[m as usize] {
-                    let ac = active_colors[m as usize];
-                    c.r = ((ac.r as u16 + 255) / 2) as u8;
-                    c.g = ((ac.g as u16 + 255) / 2) as u8;
-                    c.b = ((ac.b as u16 + 255) / 2) as u8;
-                }
-
-                canvas.set_draw_color(c);
-                render_fill_rounded_rect(&mut canvas,
-                    x as i32, note_area_h,
-                    width as i32 - 1, keyboard_height,
-                    5, CORNER_BL | CORNER_BR).unwrap_or(());
-            }
-        }
-
-        // 2. Schwarze Tasten
-        for m in MIN_MIDI..=MAX_MIDI {
-            if is_black_key(m) {
-                let (x, width, _) = get_key_geometry(m, w as f32);
-                let mut c = Color::RGB(20, 20, 20);
-
-                if active_keys[m as usize] {
-                    let ac = active_colors[m as usize];
-                    c.r = ((ac.r as u16 + 100) / 2) as u8;
-                    c.g = ((ac.g as u16 + 100) / 2) as u8;
-                    c.b = ((ac.b as u16 + 100) / 2) as u8;
-                }
-
-                canvas.set_draw_color(c);
-                render_fill_rounded_rect(&mut canvas,
-                    x as i32, note_area_h,
-                    width as i32, (keyboard_height as f32 * 0.65) as i32,
-                    3, CORNER_BL | CORNER_BR).unwrap_or(());
-            }
-        }
-
-        canvas.present();
+        env.canvas.present();
     }
     Ok(())
 }
