@@ -1,7 +1,10 @@
 // =====================================================================
 // Mivi -- Ein MIDI-Synthesizer und -Visualizer (Portierung auf Rust)
 // =====================================================================
-// Version 2026-01-24
+// Version 2026-02-03
+
+// Hängt von SDL2 ab. Installieren:
+// sudo apt install libsdl2-dev libsdl2-image-dev
 
 use sdl2::audio::{AudioCallback, AudioSpecDesired, AudioCVT};
 use sdl2::event::Event;
@@ -19,6 +22,12 @@ use std::io::{Read, Seek, SeekFrom};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
 use std::ops::ControlFlow;
+
+mod staff;
+use crate::staff::{
+    ImageSystem, Textures, StackRingBuffer, BufferedHead,
+    render_staff
+};
 
 // =====================================================================
 // KONFIGURATION UND KONSTANTEN
@@ -75,11 +84,15 @@ struct Env {
     pause_start_time: Instant,
     paused: bool,
     fullscreen: bool,
-    active_keys: [bool; 128],
-    active_colors: [Color; 128],
+    view_mode: u8,
 
     // Unveränderliche Audio-Daten
-    end_limit: f64
+    end_limit: f64,
+
+    // Wiederverwendbare Arbeitsspeicher
+    active_keys: [bool; 128],
+    active_colors: [Color; 128],
+    ring_buffer: StackRingBuffer::<BufferedHead, 256>
 }
 
 // =====================================================================
@@ -646,7 +659,10 @@ fn handle_input(env: &mut Env) -> ControlFlow<()> {
                         } else {
                             env.fullscreen = !env.fullscreen;
                         }
-                    }
+                    },
+                    Keycode::S => {
+                        env.view_mode = (env.view_mode + 1) % 3;
+                    },
                     _ => {}
                 }
             }
@@ -659,6 +675,32 @@ fn handle_input(env: &mut Env) -> ControlFlow<()> {
 // =====================================================================
 // Grafik-Ausgabe
 // =====================================================================
+
+struct RenderView {
+    rect: Rect
+}
+
+impl RenderView {
+    pub fn new(x: i32, y: i32, w: u32, h: u32) -> Self {
+        Self {rect: Rect::new(x, y, w, h)}
+    }
+    pub fn begin(&self, canvas: &mut Canvas<Window>, bg_color: Color) {
+        canvas.set_viewport(self.rect);
+
+        // Sollte set_viewport bereits semantisch beinhalten.
+        // Falls doch etwas herausragt, die Kommentierung auflösen.
+        /*
+        canvas.set_clip_rect(None);
+        let local_clip = Rect::new(0, 0, self.rect.width(), self.rect.height());
+        canvas.set_clip_rect(local_clip);
+        // */
+
+        canvas.set_draw_color(bg_color);
+        canvas.fill_rect(None).unwrap_or(()); // None = ganzer Viewport
+    }
+    pub fn width(&self) -> i32 { self.rect.width() as i32 }
+    pub fn height(&self) -> i32 { self.rect.height() as i32 }
+}
 
 fn render_notes(env: &mut Env, notes: &Vec<Note>,
     w: i32, note_area_h: i32,
@@ -744,6 +786,26 @@ fn render_keys(env: &mut Env, w: i32, note_area_h: i32, keyboard_height: i32) {
     }
 }
 
+fn render_piano(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current_time: f64) {
+    // Zeichnen
+    view.begin(&mut env.canvas, Color::RGB(30, 30, 35));
+
+    // Geometrie-Parameter berechnen
+    let w = view.width();
+    let h = view.height();
+    let keyboard_height = KEYBOARD_HEIGHT * w / (WINDOW_WIDTH as i32);
+    let note_area_h = h - keyboard_height;
+
+    let visible_time_range = note_area_h as f64 / PIXELS_PER_SECOND;
+    let lookahead_time = visible_time_range + 1.0;
+
+    // Reset Keys
+    env.active_keys.fill(false);
+
+    render_notes(env, notes, w, note_area_h, current_time, lookahead_time);
+    render_keys(env, w, note_area_h, keyboard_height);
+}
+
 // =====================================================================
 // MAIN
 // =====================================================================
@@ -795,6 +857,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut midifile = "";
     let mut use_timidity = false;
     let mut auto_quit = false;
+    let mut view_mode = 0;
 
     if args.len() < 2 {
         println!("Verwendung: {} <datei.mid> [-tm]", args[0]);
@@ -805,6 +868,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         match arg.as_str() {
             "-tm" => {use_timidity = true;},
             "-aq" => {auto_quit = true;},
+            "-s"  => {view_mode = 1;},
             _ => {midifile = arg;}
         }
     }
@@ -856,7 +920,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let event_pump = sdl_context.event_pump()?;
 
-    // Damit die Audio-Länge bestimmt wann Ende ist
+    // Damit die Audio-Länge bestimmt, wann Ende ist
     let loop_limit = if audio_duration > duration { audio_duration } else { duration };
     let end_limit = if use_timidity { loop_limit + 1.5 } else { duration + 1.0 };
 
@@ -868,10 +932,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         pause_start_time: Instant::now(), // Merkt sich, wann Pause gedrückt wurde
         paused: false,
         fullscreen: false,
+        end_limit,
+        view_mode,
         active_keys: [false; 128],
         active_colors: [Color::RGB(0, 0, 0); 128],
-        end_limit,
+        ring_buffer: StackRingBuffer::new()
     };
+
+    // Texturen laden
+    let img_sys = ImageSystem::init(&env);
+    let textures = Textures::load(&img_sys);
 
     // 4. Main Loop
     loop {
@@ -890,26 +960,31 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             ControlFlow::Break(()) => break
         }
 
-        // Geometrie-Parameter berechnen
-        let (w_u32, h_u32) = env.canvas.output_size()?;
-        let w = w_u32 as i32;
-        let h = h_u32 as i32;
-        let keyboard_height = KEYBOARD_HEIGHT * w / (WINDOW_WIDTH as i32);
-        let note_area_h = h - keyboard_height;
-
-        let visible_time_range = note_area_h as f64 / PIXELS_PER_SECOND;
-        let lookahead_time = visible_time_range + 1.0;
-
-        // Zeichnen
-        env.canvas.set_draw_color(Color::RGB(30, 30, 35));
+        /* // Hintergrund; nicht gebraucht, da Vordergrund ausfüllend
+        env.canvas.set_viewport(None);
+        env.canvas.set_clip_rect(None);
+        env.canvas.set_draw_color(Color::RGB(0, 0, 0));
         env.canvas.clear();
+        // */
 
-        // Reset Keys
-        env.active_keys.fill(false);
+        let (win_w, win_h) = env.canvas.output_size()?;
+        let view = RenderView::new(0, 0, win_w, win_h);
 
-        render_notes(&mut env, &notes, w, note_area_h, current_time, lookahead_time);
-        render_keys(&mut env, w, note_area_h, keyboard_height);
+        if env.view_mode == 0 {
+            render_piano(&mut env, &view, &notes, current_time);
+        } else if env.view_mode == 1 {
+            render_staff(&mut env, &view, &notes, current_time, &textures);
+        } else {
+            let staff_h = win_h / 2;
+            let piano_y = staff_h as i32;
+            let piano_h = win_h - staff_h;
 
+            let view = RenderView::new(0, 0, win_w, staff_h);
+            render_staff(&mut env, &view, &notes, current_time, &textures);
+
+            let view = RenderView::new(0, piano_y, win_w, piano_h);
+            render_piano(&mut env, &view, &notes, current_time);
+        }
         env.canvas.present();
     }
     Ok(())
