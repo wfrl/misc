@@ -66,6 +66,9 @@ pub struct Textures<'a> {
 #[cfg(feature = "image")]
 impl<'a> Textures<'a> {
     pub fn load(img_sys: &'a ImageSystem) -> Self {
+        // Den Font "Noto Music" in Inkscape verwenden. Die Glyphen
+        // 𝄞, 𝄢 jeweils als PNG-Datei in der genutzten Auflösung
+        // mit transparentem Hintergrund exportieren.
         const TREBLE_PNG_BYTES: &[u8] = include_bytes!("../assets/treble-clef.png");
         const BASS_PNG_BYTES:   &[u8] = include_bytes!("../assets/bass-clef.png");
 
@@ -120,21 +123,21 @@ fn render_keys(env: &mut Env, textures: &Textures, center_y: i32) {
     // Ein Violinschlüssel ist ca. 7.5 Linienabstände hoch (vom unteren Haken bis zur Spitze).
     // Bei Spacing 14px * 8 = ca. 112px visuelle Höhe.
     // Wir nehmen etwas mehr für Padding im Bild.
-    let treble_h = 98;
+    let treble_h = 96;
     // Aspect Ratio des Bildes beachten! Wenn das PNG 100x200 ist, sollte width = height / 2 sein.
     // Angenommen, das PNG ist schlank (ca 1:2.5):
-    let treble_w = 36;
+    let treble_w = 34;
 
     // Offset Y: Verschiebt den Schlüssel nach oben/unten.
     // Ziel: Die Spirale (Kringel) muss sich um die G-Linie (2. Linie von unten) drehen.
     let treble_offset_y = -11;
 
     // Bassschlüssel:
-    let bass_h = 45; // Kleiner als Treble
-    let bass_w = 41; // Etwas breiter/bauchiger
+    let bass_h = 43;
+    let bass_w = 37;
 
     // Ziel: Die zwei Punkte müssen die F-Linie (2. Linie von oben im Bass-System) umschließen.
-    let bass_offset_y = 9;
+    let bass_offset_y = 8;
 
     // --- BERECHNUNG & ZEICHNEN ---
 
