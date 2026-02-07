@@ -26,7 +26,7 @@ use std::ops::ControlFlow;
 mod staff;
 use crate::staff::{
     ImageSystem, Textures, StackRingBuffer, BufferedHead,
-    render_staff
+    render_staff, KeyInfo
 };
 
 // =====================================================================
@@ -84,7 +84,9 @@ struct Env {
     pause_start_time: Instant,
     paused: bool,
     fullscreen: bool,
+    black_notes: bool,
     view_mode: u8,
+    root_key: KeyInfo,
 
     // Unveränderliche Audio-Daten
     end_limit: f64,
@@ -857,7 +859,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut midifile = "";
     let mut use_timidity = false;
     let mut auto_quit = false;
+    let mut black_notes = false;
     let mut view_mode = 0;
+    let mut root_key = KeyInfo(0, 0);
 
     if args.len() < 2 {
         println!("Verwendung: {} <datei.mid> [-tm]", args[0]);
@@ -865,11 +869,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     for arg in &args[1..] {
-        match arg.as_str() {
-            "-tm" => {use_timidity = true;},
-            "-aq" => {auto_quit = true;},
-            "-s"  => {view_mode = 1;},
-            _ => {midifile = arg;}
+        let arg = arg.as_str();
+        if arg.as_bytes()[0] == b'-' {
+            match arg {
+                "-tm" => {use_timidity = true;},
+                "-aq" => {auto_quit = true;},
+                "-b"  => {black_notes = true;},
+                "-s"  => {view_mode = 1;},
+                key if key.starts_with("-k") => {
+                    root_key = KeyInfo::from_name(&key[2..]);
+                },
+                _ => {}
+            }
+        } else {
+            midifile = arg;
         }
     }
 
@@ -932,16 +945,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         pause_start_time: Instant::now(), // Merkt sich, wann Pause gedrückt wurde
         paused: false,
         fullscreen: false,
+        black_notes,
         end_limit,
         view_mode,
         active_keys: [false; 128],
         active_colors: [Color::RGB(0, 0, 0); 128],
-        ring_buffer: StackRingBuffer::new()
+        ring_buffer: StackRingBuffer::new(),
+        root_key
     };
 
     // Texturen laden
     let img_sys = ImageSystem::init(&env);
-    let textures = Textures::load(&img_sys);
+    let mut textures = Textures::load(&img_sys);
 
     // 4. Main Loop
     loop {
@@ -973,14 +988,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if env.view_mode == 0 {
             render_piano(&mut env, &view, &notes, current_time);
         } else if env.view_mode == 1 {
-            render_staff(&mut env, &view, &notes, current_time, &textures);
+            render_staff(&mut env, &view, &notes, current_time, &mut textures);
         } else {
             let staff_h = win_h / 2;
             let piano_y = staff_h as i32;
             let piano_h = win_h - staff_h;
 
             let view = RenderView::new(0, 0, win_w, staff_h);
-            render_staff(&mut env, &view, &notes, current_time, &textures);
+            render_staff(&mut env, &view, &notes, current_time, &mut textures);
 
             let view = RenderView::new(0, piano_y, win_w, piano_h);
             render_piano(&mut env, &view, &notes, current_time);

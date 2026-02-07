@@ -1,4 +1,3 @@
-
 // =====================================================================
 // ZEICHNEN (Klavier-Akkolade, horizontal)
 // =====================================================================
@@ -60,23 +59,44 @@ impl ImageSystem {
 #[cfg(feature = "image")]
 pub struct Textures<'a> {
     treble_key: Texture<'a>,
-    bass_key: Texture<'a>
+    bass_key: Texture<'a>,
+    sharp: Texture<'a>,
+    flat: Texture<'a>,
+    natural: Texture<'a>
 }
 
 #[cfg(feature = "image")]
 impl<'a> Textures<'a> {
+    const SHARP_W: u32 = 14;
+    const SHARP_H: u32 = 26;
+    const FLAT_W: u32 = 12;
+    const FLAT_H: u32 = 28;
+    const NATURAL_W: u32 = 10;
+    const NATURAL_H: u32 = 24;
+
     pub fn load(img_sys: &'a ImageSystem) -> Self {
         // Den Font "Noto Music" in Inkscape verwenden. Die Glyphen
         // 𝄞, 𝄢 jeweils als PNG-Datei in der genutzten Auflösung
         // mit transparentem Hintergrund exportieren.
-        const TREBLE_PNG_BYTES: &[u8] = include_bytes!("../assets/treble-clef.png");
-        const BASS_PNG_BYTES:   &[u8] = include_bytes!("../assets/bass-clef.png");
+        const  TREBLE_PNG_BYTES: &[u8] = include_bytes!("../assets/treble-clef.png");
+        const    BASS_PNG_BYTES: &[u8] = include_bytes!("../assets/bass-clef.png");
+
+        // Die Glyphen ♯, ♭, ♮.
+        const   SHARP_PNG_BYTES: &[u8] = include_bytes!("../assets/sharp.png");
+        const    FLAT_PNG_BYTES: &[u8] = include_bytes!("../assets/flat.png");
+        const NATURAL_PNG_BYTES: &[u8] = include_bytes!("../assets/natural.png");
 
         let treble_key = img_sys.texture_creator.load_texture_bytes(TREBLE_PNG_BYTES)
             .expect("Konnte Treble-PNG nicht laden");
         let bass_key = img_sys.texture_creator.load_texture_bytes(BASS_PNG_BYTES)
             .expect("Konnte Bass-PNG nicht laden");
-        Self {treble_key, bass_key}
+        let sharp = img_sys.texture_creator.load_texture_bytes(SHARP_PNG_BYTES)
+            .expect("Konnte Sharp-PNG nicht laden");
+        let flat = img_sys.texture_creator.load_texture_bytes(FLAT_PNG_BYTES)
+            .expect("Konnte Flat-PNG nicht laden");
+        let natural = img_sys.texture_creator.load_texture_bytes(NATURAL_PNG_BYTES)
+            .expect("Konnte Natural-PNG nicht laden");
+        Self {treble_key, bass_key, sharp, flat, natural}
     }
 }
 
@@ -90,30 +110,147 @@ impl Textures {
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum Accidental {
+    None,    // Kein Vorzeichen an der Note nötig
+    Natural, // ♮ Auflösungszeichen
+    Sharp,   // # Kreuz
+    Flat,    // b Be
+}
+
+fn is_flat_root(root: i32) -> bool {
+    // F(5), Bes(10), Es(3), As(8), Des(1), Ges(6)
+    matches!(root, 5 | 10 | 3 | 8 | 1 | 6)
+}
+
+fn determine_accidental(midi_key: i32, root: i32) -> Accidental {
+    let n = midi_key.rem_euclid(12);
+    let major_intervals = [0, 2, 4, 5, 7, 9, 11];
+
+    for &interval in &major_intervals {
+        if (root + interval) % 12 == n {
+            return Accidental::None;
+        }
+    }
+
+    // Ist der Ton physikalisch eine weiße Taste (C, D, E, F, G, A, B)?
+    // Wenn ja, aber nicht in der Skala (siehe oben), muss er aufgelöst werden.
+    let is_white_key = matches!(n, 0 | 2 | 4 | 5 | 7 | 9 | 11);
+
+    if is_white_key {
+        return Accidental::Natural;
+    }
+
+    // Chromatische Anpassung (# oder b)
+    // Der Ton ist eine schwarze Taste und nicht in der Skala.
+    // Entscheidung anhand des Quintenzirkels (Flat Roots vs Sharp Roots).
+    if is_flat_root(root) {
+        Accidental::Flat
+    } else {
+        Accidental::Sharp
+    }
+}
+
+#[allow(dead_code)]
+pub struct KeyInfo(pub i32, pub u8);
+
+impl KeyInfo {
+    pub fn from_name(key: &str) -> KeyInfo {
+        match key {
+            "C" | "a" | "Am"  => KeyInfo(0, 0),
+            "D" | "b" | "Bm" | "h" | "Hm" => KeyInfo(2, 2),
+            "E" | "c#" | "cis" | "C#m" => KeyInfo(4, 4),
+            "G" | "e" | "Em" => KeyInfo(7, 1),
+            "A" | "f#" | "fis" | "F#m" => KeyInfo(9, 3),
+            "B" | "H" => KeyInfo(11, 5),
+            "F" | "d" | "Dm" => KeyInfo(5, 1),
+            "Bes" | "Bb" | "g" | "Gm" => KeyInfo(10, 2),
+            "Es" | "Eb" | "c" | "Cm" => KeyInfo(3, 3),
+            "As" | "Ab" | "f" | "Fm" => KeyInfo(8, 4),
+            "Des" | "Db" | "bes" | "bb" | "Besm" | "Bbm" => KeyInfo(1, 5),
+            "Ges" | "Gb" | "es" | "eb" | "Esm" | "Ebm" => KeyInfo(6, 6),
+            _ => unimplemented!()
+        }
+    }
+}
+
 // Berechnet den vertikalen "Step" im Notensystem relativ zu C4 (Midi 60)
 // C4 = 0, D4 = 1, E4 = 2 ...
-fn get_staff_step(midi: i32) -> i32 {
+fn get_staff_step(midi: i32, flat: bool) -> i32 {
     let octave = (midi / 12) - 1; // MIDI Oktave (-1 für interne Berechnung)
     let note_in_octave = midi % 12;
 
     // Mapping: Semitone Index -> Staff Step Index (C=0, D=1, E=2, F=3, G=4, A=5, B=6)
     // Schwarze Tasten (Sharps) landen auf der gleichen Höhe wie die Note darunter
-    let step_in_octave = match note_in_octave {
-        0 | 1 => 0, // C, C#
-        2 | 3 => 1, // D, D#
-        4 => 2,     // E
-        5 | 6 => 3, // F, F#
-        7 | 8 => 4, // G, G#
-        9 | 10 => 5,// A, A#
-        11 => 6,    // B
-        _ => 0,
+    let step_in_octave = if flat {
+        match note_in_octave {
+            0 => 0,      // C
+            1 | 2 => 1,  // Db, D
+            3 | 4 => 2,  // Eb, E
+            5 => 3,      // F
+            6 | 7 => 4,  // Gb, G
+            8 | 9 => 5,  // Ab, A
+            10 | 11 => 6,// Bb, B
+            _ => 0
+        }
+    } else {
+        match note_in_octave {
+            0 | 1 => 0, // C, C#
+            2 | 3 => 1, // D, D#
+            4 => 2,     // E
+            5 | 6 => 3, // F, F#
+            7 | 8 => 4, // G, G#
+            9 | 10 => 5,// A, A#
+            11 => 6,    // B
+            _ => 0
+        }
     };
 
     (octave * 7) + step_in_octave
 }
 
 #[cfg(feature = "image")]
-fn render_keys(env: &mut Env, textures: &Textures, center_y: i32) {
+fn render_accidentals(env: &mut Env, textures: &mut Textures, x: i32, y: i32, flat: bool) {
+    const X_SCALE: i32 = 100;
+    const Y_SCALE: i32 = 100;
+    const X_SPACE: i32 = 1400 / X_SCALE;
+    const YS_F: i32 = 0 / Y_SCALE;
+    const YS_C: i32 = 2200 / Y_SCALE;
+    const YS_G: i32 = -800 / Y_SCALE;
+    const YS_D: i32 = 1400 / Y_SCALE;
+    const YS_A: i32 = 3500 / Y_SCALE;
+    const YS: [i32; 5] = [YS_F, YS_C, YS_G, YS_D, YS_A];
+
+    const YF_SHIFT: i32 = -8;
+    const YF_H: i32 = 2800 / Y_SCALE;
+    const YF_E: i32 = 700 / Y_SCALE;
+    const YF_A: i32 = 3500 / Y_SCALE;
+    const YF_D: i32 = 1400 / Y_SCALE;
+    const YF_G: i32 = 4200 / Y_SCALE;
+    const YF_C: i32 = 2100 / Y_SCALE;
+    const YF: [i32; 6] = [YF_H, YF_E, YF_A, YF_D, YF_G, YF_C];
+
+    if flat {
+        textures.flat.set_color_mod(0, 0, 0);
+        for i in 0..env.root_key.1 {
+            let dx = i32::from(i)*X_SPACE;
+            let dy = YF_SHIFT + YF[usize::from(i)];
+            let rect_flat = Rect::new(x + dx, y + dy, Textures::FLAT_W, Textures::FLAT_H);
+            env.canvas.copy(&textures.flat, None, rect_flat).unwrap();
+        }
+    } else {
+        textures.sharp.set_color_mod(0, 0, 0);
+        for i in 0..env.root_key.1 {
+            let dx = i32::from(i)*X_SPACE;
+            let dy = YS[usize::from(i)];
+            let rect_sharp = Rect::new(x + dx, y + dy, Textures::SHARP_W, Textures::SHARP_H);
+            env.canvas.copy(&textures.sharp, None, rect_sharp).unwrap();
+        }
+    }
+}
+
+#[cfg(feature = "image")]
+fn render_keys(env: &mut Env, textures: &mut Textures, center_y: i32, flat: bool) {
     // -----------------------------------------------------------------
     // 2. Notenschlüssel (Assets oder Dummies)
     // -----------------------------------------------------------------
@@ -156,6 +293,11 @@ fn render_keys(env: &mut Env, textures: &Textures, center_y: i32) {
     // Textur kopieren (das 'None' bedeutet: ganzes Quellbild nutzen)
     env.canvas.copy(&textures.treble_key, None, rect_treble).unwrap();
 
+    const X_ACCI: i32 = 68;
+    if env.root_key.0 != 0 {
+        render_accidentals(env, textures, X_ACCI, g4_y - 54, flat);
+    }
+
     if SHOW_BASS_STAFF {
         // Bass Reference ist F3 (Step -4)
         let f3_y = center_y - (-4 * STAFF_LINE_SPACING / 2);
@@ -168,15 +310,20 @@ fn render_keys(env: &mut Env, textures: &Textures, center_y: i32) {
         );
 
         env.canvas.copy(&textures.bass_key, None, rect_bass).unwrap();
+
+        if env.root_key.0 != 0 {
+            render_accidentals(env, textures, X_ACCI, f3_y - 12, flat);
+        }
     }
 }
 
 #[cfg(not(feature = "image"))]
-fn render_keys(_env: &mut Env, _textures: &Textures, _center_y: i32) {
+fn render_keys(_env: &mut Env, _textures: &Textures, _center_y: i32, _flat: bool) {
 }
 
+#[allow(dead_code)]
 pub struct BufferedHead {
-    x: i32, y: i32,
+    x: i32, y: i32, midi_key: i32,
     color: Color
 }
 
@@ -228,11 +375,46 @@ impl<T, const N: usize> StackRingBuffer<T, N> {
     }
 }
 
-pub fn render_staff(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current_time: f64, textures: &Textures) {
+fn render_note(env: &mut Env, head: &BufferedHead,
+  #[allow(unused_variables)]
+  textures: &mut Textures
+) {
+    #[allow(unused_variables)]
+    let accidental = determine_accidental(head.midi_key, env.root_key.0);
+    #[cfg(feature = "image")]
+    if accidental != Accidental::None {
+        let Color {r, g, b, ..} = head.color;
+        if accidental == Accidental::Sharp {
+            textures.sharp.set_color_mod(r, g, b);
+            let rect_sharp = Rect::new(head.x - 16, head.y - 5,
+                Textures::SHARP_W, Textures::SHARP_H);
+            env.canvas.copy(&textures.sharp, None, rect_sharp).unwrap();
+        } else if accidental == Accidental::Flat {
+            textures.flat.set_color_mod(r, g, b);
+            let rect_flat = Rect::new(head.x - 16, head.y - 12,
+                Textures::FLAT_W, Textures::FLAT_H);
+            env.canvas.copy(&textures.flat, None, rect_flat).unwrap();
+        } else {
+            textures.natural.set_color_mod(r, g, b);
+            let rect_natural = Rect::new(head.x - 12, head.y - 4,
+                Textures::NATURAL_W, Textures::NATURAL_H);
+            env.canvas.copy(&textures.natural, None, rect_natural).unwrap();
+        }
+    }
+    env.canvas.set_draw_color(head.color);
+    render_fill_rounded_rect(
+        &mut env.canvas, head.x, head.y,
+        NOTE_HEAD_WIDTH, NOTE_HEAD_HEIGHT,
+        6, // Radius für Rundung
+        CORNER_ALL
+    ).unwrap_or(());
+}
+
+pub fn render_staff(env: &mut Env, view: &RenderView,
+    notes: &Vec<Note>, current_time: f64, textures: &mut Textures
+) {
     // Hintergrund
     view.begin(&mut env.canvas, Color::RGB(255, 255, 255));
-    // env.canvas.set_draw_color(Color::RGB(255, 255, 255));
-    // env.canvas.clear();
 
     // Blend Mode für Transparenz aktivieren (wichtig für die "seichte Spur")
     env.canvas.set_blend_mode(sdl2::render::BlendMode::Blend);
@@ -240,15 +422,13 @@ pub fn render_staff(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current
     let w = view.width();
     let h = view.height();
 
-    // let (w_u32, h_u32) = env.canvas.output_size().unwrap();
-    // let w = w_u32 as i32;
-    // let h = h_u32 as i32;
+    let flat = is_flat_root(env.root_key.0);
 
     // Referenzpunkt: Mittleres C (C4, Midi 60) liegt vertikal in der Mitte des Fensters
     let center_y = h / 2;
 
     // Berechnung des "Steps" für C4
-    let c4_step = get_staff_step(60);
+    let c4_step = get_staff_step(60, false);
 
     // -----------------------------------------------------------------
     // Playhead (Jetzt-Linie)
@@ -318,18 +498,24 @@ pub fn render_staff(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current
         let note_width_px = n.duration * PIXELS_PER_SECOND;
 
         // Y-Position berechnen (Staff Mapping)
-        let step = get_staff_step(n.midi_key);
+        let step = get_staff_step(n.midi_key, flat);
         let rel_step = step - c4_step;
         let y_pos = center_y - (rel_step * STAFF_LINE_SPACING / 2);
 
         // Farbe bestimmen
-        let mut color = n.color;
+        let mut color = if env.black_notes {
+            Color {r: 0, g: 0, b: 0, a: 0}
+        } else {
+            n.color
+        };
+
         // Wenn Note gerade aktiv ist (unter dem Playhead), leicht aufhellen
         let is_active = x_start <= PLAYHEAD_X as f64 && (x_start + note_width_px) >= PLAYHEAD_X as f64;
         if is_active {
-            color.r = color.r.saturating_add(50);
-            color.g = color.g.saturating_add(50);
-            color.b = color.b.saturating_add(50);
+            let color_shift = if env.black_notes {120} else {50};
+            color.r = color.r.saturating_add(color_shift);
+            color.g = color.g.saturating_add(color_shift);
+            color.b = color.b.saturating_add(color_shift);
         }
 
         // A) Die Spur (Trail) - Länge der Note
@@ -358,7 +544,7 @@ pub fn render_staff(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current
         // -------------------------------------------------------------
 
         // 1. Berechnung sicherstellen (falls noch nicht geschehen):
-        let abs_step = get_staff_step(n.midi_key);
+        let abs_step = get_staff_step(n.midi_key, flat);
         let rel_step = abs_step - c4_step;
 
         // DEBUGGING (Einkommentieren bei Bedarf):
@@ -430,29 +616,17 @@ pub fn render_staff(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current
         // Note zeichnen ein wenig verzögern, damit sie nicht
         // von den Hilfslinien der nächsten Noten überdeckt wird
         let new_head = BufferedHead {
-            x: head_x,
-            y: head_y,
+            x: head_x, y: head_y, midi_key: n.midi_key,
             color: Color::RGBA(color.r, color.g, color.b, 255),
         };
         if let Some(old_head) = env.ring_buffer.push_overflow(new_head) {
-            env.canvas.set_draw_color(old_head.color);
-            render_fill_rounded_rect(
-                &mut env.canvas, old_head.x, old_head.y,
-                NOTE_HEAD_WIDTH, NOTE_HEAD_HEIGHT,
-                6, // Radius für Rundung
-                CORNER_ALL
-            ).unwrap_or(());
+            render_note(env, &old_head, textures);
         }
     }
 
     while let Some(head) = env.ring_buffer.pop() {
-        env.canvas.set_draw_color(head.color);
-        render_fill_rounded_rect(
-            &mut env.canvas, head.x, head.y,
-            NOTE_HEAD_WIDTH, NOTE_HEAD_HEIGHT,
-            6, CORNER_ALL
-        ).unwrap_or(());
+        render_note(env, &head, textures);
     }
 
-    render_keys(env, textures, center_y);
+    render_keys(env, textures, center_y, flat);
 }
