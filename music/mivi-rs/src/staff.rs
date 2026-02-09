@@ -7,8 +7,7 @@ use sdl2::render::Canvas;
 use sdl2::video::Window;
 use sdl2::rect::Rect;
 use crate::{Env, RenderView, Note};
-use crate::render_fill_rounded_rect;
-use crate::{CORNER_ALL, PIXELS_PER_SECOND};
+use crate::PIXELS_PER_SECOND;
 
 #[cfg(feature = "image")]
 use sdl2::{
@@ -62,7 +61,8 @@ pub struct Textures<'a> {
     bass_key: Texture<'a>,
     sharp: Texture<'a>,
     flat: Texture<'a>,
-    natural: Texture<'a>
+    natural: Texture<'a>,
+    head: Texture<'a>
 }
 
 #[cfg(feature = "image")]
@@ -86,6 +86,9 @@ impl<'a> Textures<'a> {
         const    FLAT_PNG_BYTES: &[u8] = include_bytes!("../assets/flat.png");
         const NATURAL_PNG_BYTES: &[u8] = include_bytes!("../assets/natural.png");
 
+        // Die Glyphe 𝅝 (ganze Note) ausfüllen und stauchen.
+        const    HEAD_PNG_BYTES: &[u8] = include_bytes!("../assets/notehead.png");
+
         let treble_key = img_sys.texture_creator.load_texture_bytes(TREBLE_PNG_BYTES)
             .expect("Konnte Treble-PNG nicht laden");
         let bass_key = img_sys.texture_creator.load_texture_bytes(BASS_PNG_BYTES)
@@ -96,7 +99,9 @@ impl<'a> Textures<'a> {
             .expect("Konnte Flat-PNG nicht laden");
         let natural = img_sys.texture_creator.load_texture_bytes(NATURAL_PNG_BYTES)
             .expect("Konnte Natural-PNG nicht laden");
-        Self {treble_key, bass_key, sharp, flat, natural}
+        let head = img_sys.texture_creator.load_texture_bytes(HEAD_PNG_BYTES)
+            .expect("Konnte Natural-PNG nicht laden");
+        Self {treble_key, bass_key, sharp, flat, natural, head}
     }
 }
 
@@ -381,33 +386,40 @@ fn render_note(env: &mut Env, head: &BufferedHead,
 ) {
     #[allow(unused_variables)]
     let accidental = determine_accidental(head.midi_key, env.root_key.0);
-    #[cfg(feature = "image")]
-    if accidental != Accidental::None {
+    #[cfg(feature = "image")] {
         let Color {r, g, b, ..} = head.color;
-        if accidental == Accidental::Sharp {
-            textures.sharp.set_color_mod(r, g, b);
-            let rect_sharp = Rect::new(head.x - 16, head.y - 5,
-                Textures::SHARP_W, Textures::SHARP_H);
-            env.canvas.copy(&textures.sharp, None, rect_sharp).unwrap();
-        } else if accidental == Accidental::Flat {
-            textures.flat.set_color_mod(r, g, b);
-            let rect_flat = Rect::new(head.x - 16, head.y - 12,
-                Textures::FLAT_W, Textures::FLAT_H);
-            env.canvas.copy(&textures.flat, None, rect_flat).unwrap();
-        } else {
-            textures.natural.set_color_mod(r, g, b);
-            let rect_natural = Rect::new(head.x - 12, head.y - 4,
-                Textures::NATURAL_W, Textures::NATURAL_H);
-            env.canvas.copy(&textures.natural, None, rect_natural).unwrap();
+        if accidental != Accidental::None {
+            if accidental == Accidental::Sharp {
+                textures.sharp.set_color_mod(r, g, b);
+                let rect_sharp = Rect::new(head.x - 16, head.y - 5,
+                    Textures::SHARP_W, Textures::SHARP_H);
+                env.canvas.copy(&textures.sharp, None, rect_sharp).unwrap();
+            } else if accidental == Accidental::Flat {
+                textures.flat.set_color_mod(r, g, b);
+                let rect_flat = Rect::new(head.x - 15, head.y - 12,
+                    Textures::FLAT_W, Textures::FLAT_H);
+                env.canvas.copy(&textures.flat, None, rect_flat).unwrap();
+            } else {
+                textures.natural.set_color_mod(r, g, b);
+                let rect_natural = Rect::new(head.x - 12, head.y - 4,
+                    Textures::NATURAL_W, Textures::NATURAL_H);
+                env.canvas.copy(&textures.natural, None, rect_natural).unwrap();
+            }
         }
+        textures.head.set_color_mod(r, g, b);
+        let rect_head = Rect::new(head.x + 1, head.y,
+            16, 15);
+        env.canvas.copy(&textures.head, None, rect_head).unwrap();
     }
-    env.canvas.set_draw_color(head.color);
-    render_fill_rounded_rect(
-        &mut env.canvas, head.x, head.y,
-        NOTE_HEAD_WIDTH, NOTE_HEAD_HEIGHT,
-        6, // Radius für Rundung
-        CORNER_ALL
-    ).unwrap_or(());
+    #[cfg(not(feature = "image"))] {
+        env.canvas.set_draw_color(head.color);
+        crate::render_fill_rounded_rect(
+            &mut env.canvas, head.x, head.y,
+            NOTE_HEAD_WIDTH, NOTE_HEAD_HEIGHT,
+            6, // Radius für Rundung
+            crate::CORNER_ALL
+        ).unwrap_or(());
+    }
 }
 
 pub fn render_staff(env: &mut Env, view: &RenderView,
@@ -520,9 +532,9 @@ pub fn render_staff(env: &mut Env, view: &RenderView,
 
         // A) Die Spur (Trail) - Länge der Note
         let trail_rect = Rect::new(
-            x_start as i32,
+            x_start as i32 + 3,
             y_pos - (NOTE_HEAD_HEIGHT / 4), // Spur ist etwas dünner als der Kopf
-            note_width_px as u32,
+            (note_width_px as u32).saturating_sub(3),
             (NOTE_HEAD_HEIGHT / 2) as u32
         );
 
