@@ -316,7 +316,7 @@ fn parse_midi(filename: &str) -> Result<(Vec<MidiEvent>, u16), Box<dyn std::erro
 }
 
 fn convert_to_notes(events: &[MidiEvent], division: u16,
-    tempo: Option<f64>
+    tempo: Option<f64>, transpose: i32
 ) -> (Vec<Note>, f64) {
     let mut notes = Vec::new();
     let mut cur_time = 0.0;
@@ -349,10 +349,15 @@ fn convert_to_notes(events: &[MidiEvent], division: u16,
                 if let Some((start, vel)) = active_notes[ch][n] {
                     let dur = cur_time - start;
                     if dur > 0.0 {
+                        let final_key = if e.channel == 9 {
+                            e.note as i32
+                        } else {
+                            e.note as i32 + transpose
+                        };
                         notes.push(Note {
                             start_time: start,
                             duration: dur,
-                            midi_key: e.note as i32,
+                            midi_key: final_key,
                             _velocity: vel as i32,
                             _channel: e.channel as i32,
                             color: get_channel_color(e.channel as i32),
@@ -367,10 +372,15 @@ fn convert_to_notes(events: &[MidiEvent], division: u16,
                 if let Some((start, vel)) = active_notes[ch][n] {
                     let dur = cur_time - start;
                     if dur > 0.0 {
+                        let final_key = if e.channel == 9 {
+                            e.note as i32
+                        } else {
+                            e.note as i32 + transpose
+                        };
                         notes.push(Note {
                             start_time: start,
                             duration: dur,
-                            midi_key: e.note as i32,
+                            midi_key: final_key,
                             _velocity: vel as i32,
                             _channel: e.channel as i32,
                             color: get_channel_color(e.channel as i32),
@@ -455,7 +465,7 @@ fn synthesize_to_ram(notes: &[Note], duration: f64) -> Vec<i16> {
 // AUDIO-GENERIERUNG (Timidity-Pipe)
 // =====================================================================
 
-fn generate_audio_with_timidity(midifile: &str, tempo: Option<f64>)
+fn generate_audio_with_timidity(midifile: &str, tempo: Option<f64>, transpose: i32)
 -> Result<Vec<i16>, Box<dyn std::error::Error>>
 {
     println!("Starte Timidity via Pipe (Raw PCM)...");
@@ -463,10 +473,11 @@ fn generate_audio_with_timidity(midifile: &str, tempo: Option<f64>)
         Some(tempo) => format!("{}", (tempo * 100.0) as u32),
         None => "100".to_string()
     };
+    let transpose_opt = format!("{}", transpose);
     let output = Command::new("timidity")
         .args(&[
             midifile, "-Or", "-s", "44100", "-A160", "--preserve-silence",
-            "-T", &tempo_opt, "-o", "-"
+            "-T", &tempo_opt, "-K", &transpose_opt, "-o", "-"
         ])
         .stdout(Stdio::piped())
         .output()?;
@@ -720,7 +731,8 @@ impl RenderView {
 
 fn render_notes(env: &mut Env, notes: &Vec<Note>,
     w: i32, note_area_h: i32,
-    current_time: f64, lookahead_time: f64
+    current_time: f64, lookahead_time: f64,
+    vis_offset: i32
 ) {
     // Noten Zeichnen
     for n in notes {
@@ -732,14 +744,17 @@ fn render_notes(env: &mut Env, notes: &Vec<Note>,
         let note_h = (n.duration * PIXELS_PER_SECOND) as f32;
         let draw_y = note_y - note_h;
 
+        let display_key = n.midi_key + vis_offset;
         let is_playing = current_time >= n.start_time && current_time < (n.start_time + n.duration);
         if is_playing {
-            env.active_keys[n.midi_key as usize] = true;
-            env.active_colors[n.midi_key as usize] = n.color;
+            if display_key >= 0 && display_key <= 127 {
+                env.active_keys[display_key as usize] = true;
+                env.active_colors[display_key as usize] = n.color;
+            }
         }
 
-        if n.midi_key >= MIN_MIDI && n.midi_key <= MAX_MIDI {
-            let (x, width, _) = get_key_geometry(n.midi_key, w as f32);
+        if display_key >= MIN_MIDI && display_key <= MAX_MIDI {
+            let (x, width, _) = get_key_geometry(display_key, w as f32);
 
             let mut c = n.color;
             if is_playing {
@@ -802,7 +817,7 @@ fn render_keys(env: &mut Env, w: i32, note_area_h: i32, keyboard_height: i32) {
     }
 }
 
-fn render_piano(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current_time: f64) {
+fn render_piano(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current_time: f64, vis_offset: i32) {
     // Zeichnen
     view.begin(&mut env.canvas, Color::RGB(30, 30, 35));
 
@@ -818,7 +833,7 @@ fn render_piano(env: &mut Env, view: &RenderView, notes: &Vec<Note>, current_tim
     // Reset Keys
     env.active_keys.fill(false);
 
-    render_notes(env, notes, w, note_area_h, current_time, lookahead_time);
+    render_notes(env, notes, w, note_area_h, current_time, lookahead_time, vis_offset);
     render_keys(env, w, note_area_h, keyboard_height);
 }
 
@@ -877,6 +892,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut view_mode = 0;
     let mut root_key = KeyInfo(0, 0);
     let mut tempo: Option<f64> = None;
+    let mut transpose: i32 = 0; // Wirkt auf Audio UND Grafik
+    let mut transpose_staff: i32 = 0; // Wirkt nur auf Grafik
 
     if args.len() < 2 {
         println!("Verwendung: {} <datei.mid> [-tm]", args[0]);
@@ -899,7 +916,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         if v > 0.0 {tempo = Some(v);}
                     }
                 },
-                _ => {}
+                val if val.starts_with("--transpose=") => {
+                    // .trim_start_matches('+') erlaubt auch "+2" statt nur "2"
+                    if let Ok(v) = val[12..].trim_start_matches('+').parse::<i32>() {
+                        transpose = v;
+                    }
+                },
+                val if val.starts_with("--transpose-staff=") => {
+                    if let Ok(v) = val[18..].trim_start_matches('+').parse::<i32>() {
+                        transpose_staff = v;
+                    }
+                },
+                val => return Err(format!(
+                    "Unbekannte Option: {val}").into())
             }
         } else {
             midifile = arg;
@@ -908,7 +937,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 1. MIDI Parsen
     let (events, division) = parse_midi(midifile)?;
-    let (notes, duration) = convert_to_notes(&events, division, tempo);
+    let (notes, duration) = convert_to_notes(&events, division, tempo, transpose);
 
     if notes.is_empty() {
         return Err("Keine Noten gefunden.".into());
@@ -916,7 +945,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Audio Generieren
     let pcm_buffer = if use_timidity {
-        generate_audio_with_timidity(midifile, tempo)?
+        generate_audio_with_timidity(midifile, tempo, transpose)?
     } else {
         synthesize_to_ram(&notes, duration)
     };
@@ -1006,19 +1035,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let view = RenderView::new(0, 0, win_w, win_h);
 
         if env.view_mode == 0 {
-            render_piano(&mut env, &view, &notes, current_time);
+            render_piano(&mut env, &view, &notes, current_time, transpose_staff);
         } else if env.view_mode == 1 {
-            render_staff(&mut env, &view, &notes, current_time, &mut textures);
+            render_staff(&mut env, &view, &notes, current_time, &mut textures, transpose_staff);
         } else {
             let staff_h = win_h / 2;
             let piano_y = staff_h as i32;
             let piano_h = win_h - staff_h;
 
             let view = RenderView::new(0, 0, win_w, staff_h);
-            render_staff(&mut env, &view, &notes, current_time, &mut textures);
+            render_staff(&mut env, &view, &notes, current_time, &mut textures, transpose_staff);
 
             let view = RenderView::new(0, piano_y, win_w, piano_h);
-            render_piano(&mut env, &view, &notes, current_time);
+            render_piano(&mut env, &view, &notes, current_time, transpose_staff);
         }
         env.canvas.present();
     }

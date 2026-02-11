@@ -424,7 +424,8 @@ fn render_note(env: &mut Env, head: &BufferedHead,
 }
 
 pub fn render_staff(env: &mut Env, view: &RenderView,
-    notes: &Vec<Note>, current_time: f64, textures: &mut Textures
+    notes: &Vec<Note>, current_time: f64, textures: &mut Textures,
+    vis_offset: i32
 ) {
     // Hintergrund
     view.begin(&mut env.canvas, Color::RGB(255, 255, 255));
@@ -512,8 +513,10 @@ pub fn render_staff(env: &mut Env, view: &RenderView,
         let x_start = PLAYHEAD_X as f64 + (n.start_time - current_time) * PIXELS_PER_SECOND;
         let note_width_px = n.duration * PIXELS_PER_SECOND;
 
+        let display_key = n.midi_key + vis_offset;
+
         // Y-Position berechnen (Staff Mapping)
-        let step = get_staff_step(n.midi_key, flat);
+        let step = get_staff_step(display_key, flat);
         let rel_step = step - c4_step;
         let y_pos = center_y - (rel_step * STAFF_LINE_SPACING / 2);
 
@@ -559,12 +562,12 @@ pub fn render_staff(env: &mut Env, view: &RenderView,
         // -------------------------------------------------------------
 
         // 1. Berechnung sicherstellen (falls noch nicht geschehen):
-        let abs_step = get_staff_step(n.midi_key, flat);
+        let abs_step = get_staff_step(display_key, flat);
         let rel_step = abs_step - c4_step;
 
         // DEBUGGING (Einkommentieren bei Bedarf):
         // if n.start_time > current_time && n.start_time < current_time + 0.1 {
-        //    println!("Note: {}, Abs: {}, Rel: {}", n.midi_key, abs_step, rel_step);
+        //    println!("Note: {}, Abs: {}, Rel: {}", display_key, abs_step, rel_step);
         // }
 
         let mut ledger_start = 0;
@@ -631,7 +634,7 @@ pub fn render_staff(env: &mut Env, view: &RenderView,
         // Note zeichnen ein wenig verzögern, damit sie nicht
         // von den Hilfslinien der nächsten Noten überdeckt wird
         let new_head = BufferedHead {
-            x: head_x, y: head_y, midi_key: n.midi_key,
+            x: head_x, y: head_y, midi_key: display_key,
             color: Color::RGBA(color.r, color.g, color.b, 255),
         };
         if let Some(old_head) = env.ring_buffer.push_overflow(new_head) {
