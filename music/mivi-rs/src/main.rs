@@ -315,7 +315,9 @@ fn parse_midi(filename: &str) -> Result<(Vec<MidiEvent>, u16), Box<dyn std::erro
     Ok((all_events, division))
 }
 
-fn convert_to_notes(events: &[MidiEvent], division: u16) -> (Vec<Note>, f64) {
+fn convert_to_notes(events: &[MidiEvent], division: u16,
+    tempo: Option<f64>
+) -> (Vec<Note>, f64) {
     let mut notes = Vec::new();
     let mut cur_time = 0.0;
     let mut cur_tick = 0;
@@ -324,10 +326,16 @@ fn convert_to_notes(events: &[MidiEvent], division: u16) -> (Vec<Note>, f64) {
     // [Channel][Note] -> (Startzeit, Velocity)
     let mut active_notes: [[Option<(f64, u8)>; 128]; 16] = [[None; 128]; 16];
 
+    let conv = match tempo {
+        Some(tempo) => 1_000_000.0*tempo,
+        None => 1_000_000.0
+    };
+
     for e in events {
         if e.abs_tick > cur_tick {
             let delta_ticks = e.abs_tick - cur_tick;
-            cur_time += (delta_ticks as f64) * (micros_per_beat / 1_000_000.0) / (division as f64);
+            let delta_time = (delta_ticks as f64) * (micros_per_beat / conv) / (division as f64);
+            cur_time += delta_time;
             cur_tick = e.abs_tick;
         }
 
@@ -447,12 +455,18 @@ fn synthesize_to_ram(notes: &[Note], duration: f64) -> Vec<i16> {
 // AUDIO-GENERIERUNG (Timidity-Pipe)
 // =====================================================================
 
-fn generate_audio_with_timidity(midifile: &str) -> Result<Vec<i16>, Box<dyn std::error::Error>> {
+fn generate_audio_with_timidity(midifile: &str, tempo: Option<f64>)
+-> Result<Vec<i16>, Box<dyn std::error::Error>>
+{
     println!("Starte Timidity via Pipe (Raw PCM)...");
-
+    let tempo_opt = match tempo {
+        Some(tempo) => format!("{}", (tempo * 100.0) as u32),
+        None => "100".to_string()
+    };
     let output = Command::new("timidity")
         .args(&[
-            midifile, "-Or", "-s", "44100", "-A160", "--preserve-silence", "-o", "-"
+            midifile, "-Or", "-s", "44100", "-A160", "--preserve-silence",
+            "-T", &tempo_opt, "-o", "-"
         ])
         .stdout(Stdio::piped())
         .output()?;
@@ -862,6 +876,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut black_notes = false;
     let mut view_mode = 0;
     let mut root_key = KeyInfo(0, 0);
+    let mut tempo: Option<f64> = None;
 
     if args.len() < 2 {
         println!("Verwendung: {} <datei.mid> [-tm]", args[0]);
@@ -879,6 +894,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 key if key.starts_with("-k") => {
                     root_key = KeyInfo::from_name(&key[2..]);
                 },
+                val if val.starts_with("--tempo=") => {
+                    if let Ok(v) = val[8..].parse::<f64>() {
+                        if v > 0.0 {tempo = Some(v);}
+                    }
+                },
                 _ => {}
             }
         } else {
@@ -888,7 +908,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 1. MIDI Parsen
     let (events, division) = parse_midi(midifile)?;
-    let (notes, duration) = convert_to_notes(&events, division);
+    let (notes, duration) = convert_to_notes(&events, division, tempo);
 
     if notes.is_empty() {
         return Err("Keine Noten gefunden.".into());
@@ -896,7 +916,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 2. Audio Generieren
     let pcm_buffer = if use_timidity {
-        generate_audio_with_timidity(midifile)?
+        generate_audio_with_timidity(midifile, tempo)?
     } else {
         synthesize_to_ram(&notes, duration)
     };

@@ -21,7 +21,7 @@ use sdl2::{
 // =====================================================================
 const STAFF_LINE_THICKNESS: u32 = 2;       // Dicke der Notenlinien
 const STAFF_LINE_SPACING: i32 = 14;        // Abstand zwischen Linien (halbe Notenhöhe)
-const STAFF_COLOR: Color = Color::RGB(0, 0, 0);
+const STAFF_COLOR: Color = Color::RGB(60, 60, 60);
 
 const PLAYHEAD_X: i32 = 200;               // X-Position der "Jetzt"-Linie
 const PLAYHEAD_WIDTH: u32 = 3;             // Dicke der "Jetzt"-Linie
@@ -68,14 +68,14 @@ pub struct Textures<'a> {
 #[cfg(feature = "image")]
 impl<'a> Textures<'a> {
     const SHARP_W: u32 = 14;
-    const SHARP_H: u32 = 26;
+    const SHARP_H: u32 = 38;
     const FLAT_W: u32 = 12;
-    const FLAT_H: u32 = 28;
-    const NATURAL_W: u32 = 10;
-    const NATURAL_H: u32 = 24;
+    const FLAT_H: u32 = 33;
+    const NATURAL_W: u32 = 9;
+    const NATURAL_H: u32 = 37;
 
     pub fn load(img_sys: &'a ImageSystem) -> Self {
-        // Den Font "Noto Music" in Inkscape verwenden. Die Glyphen
+        // Den Font "Bravura" in Inkscape verwenden. Die Glyphen
         // 𝄞, 𝄢 jeweils als PNG-Datei in der genutzten Auflösung
         // mit transparentem Hintergrund exportieren.
         const  TREBLE_PNG_BYTES: &[u8] = include_bytes!("../assets/treble-clef.png");
@@ -218,15 +218,16 @@ fn get_staff_step(midi: i32, flat: bool) -> i32 {
 fn render_accidentals(env: &mut Env, textures: &mut Textures, x: i32, y: i32, flat: bool) {
     const X_SCALE: i32 = 100;
     const Y_SCALE: i32 = 100;
-    const X_SPACE: i32 = 1400 / X_SCALE;
+    const XS_SPACE: i32 = 1500 / X_SCALE;
     const YS_F: i32 = 0 / Y_SCALE;
-    const YS_C: i32 = 2200 / Y_SCALE;
-    const YS_G: i32 = -800 / Y_SCALE;
+    const YS_C: i32 = 2100 / Y_SCALE;
+    const YS_G: i32 = -700 / Y_SCALE;
     const YS_D: i32 = 1400 / Y_SCALE;
     const YS_A: i32 = 3500 / Y_SCALE;
     const YS: [i32; 5] = [YS_F, YS_C, YS_G, YS_D, YS_A];
 
-    const YF_SHIFT: i32 = -8;
+    const XF_SPACE: i32 = 1300 / X_SCALE;
+    const YF_SHIFT: i32 = -5;
     const YF_H: i32 = 2800 / Y_SCALE;
     const YF_E: i32 = 700 / Y_SCALE;
     const YF_A: i32 = 3500 / Y_SCALE;
@@ -238,7 +239,7 @@ fn render_accidentals(env: &mut Env, textures: &mut Textures, x: i32, y: i32, fl
     if flat {
         textures.flat.set_color_mod(0, 0, 0);
         for i in 0..env.root_key.1 {
-            let dx = i32::from(i)*X_SPACE;
+            let dx = i32::from(i)*XF_SPACE;
             let dy = YF_SHIFT + YF[usize::from(i)];
             let rect_flat = Rect::new(x + dx, y + dy, Textures::FLAT_W, Textures::FLAT_H);
             env.canvas.copy(&textures.flat, None, rect_flat).unwrap();
@@ -246,7 +247,7 @@ fn render_accidentals(env: &mut Env, textures: &mut Textures, x: i32, y: i32, fl
     } else {
         textures.sharp.set_color_mod(0, 0, 0);
         for i in 0..env.root_key.1 {
-            let dx = i32::from(i)*X_SPACE;
+            let dx = i32::from(i)*XS_SPACE;
             let dy = YS[usize::from(i)];
             let rect_sharp = Rect::new(x + dx, y + dy, Textures::SHARP_W, Textures::SHARP_H);
             env.canvas.copy(&textures.sharp, None, rect_sharp).unwrap();
@@ -268,7 +269,7 @@ fn render_keys(env: &mut Env, textures: &mut Textures, center_y: i32, flat: bool
     let treble_h = 96;
     // Aspect Ratio des Bildes beachten! Wenn das PNG 100x200 ist, sollte width = height / 2 sein.
     // Angenommen, das PNG ist schlank (ca 1:2.5):
-    let treble_w = 34;
+    let treble_w = 37;
 
     // Offset Y: Verschiebt den Schlüssel nach oben/unten.
     // Ziel: Die Spirale (Kringel) muss sich um die G-Linie (2. Linie von unten) drehen.
@@ -276,7 +277,7 @@ fn render_keys(env: &mut Env, textures: &mut Textures, center_y: i32, flat: bool
 
     // Bassschlüssel:
     let bass_h = 43;
-    let bass_w = 37;
+    let bass_w = 38;
 
     // Ziel: Die zwei Punkte müssen die F-Linie (2. Linie von oben im Bass-System) umschließen.
     let bass_offset_y = 8;
@@ -300,7 +301,7 @@ fn render_keys(env: &mut Env, textures: &mut Textures, center_y: i32, flat: bool
 
     const X_ACCI: i32 = 68;
     if env.root_key.0 != 0 {
-        render_accidentals(env, textures, X_ACCI, g4_y - 54, flat);
+        render_accidentals(env, textures, X_ACCI, g4_y - 60, flat);
     }
 
     if SHOW_BASS_STAFF {
@@ -317,7 +318,7 @@ fn render_keys(env: &mut Env, textures: &mut Textures, center_y: i32, flat: bool
         env.canvas.copy(&textures.bass_key, None, rect_bass).unwrap();
 
         if env.root_key.0 != 0 {
-            render_accidentals(env, textures, X_ACCI, f3_y - 12, flat);
+            render_accidentals(env, textures, X_ACCI, f3_y - 18, flat);
         }
     }
 }
@@ -391,17 +392,17 @@ fn render_note(env: &mut Env, head: &BufferedHead,
         if accidental != Accidental::None {
             if accidental == Accidental::Sharp {
                 textures.sharp.set_color_mod(r, g, b);
-                let rect_sharp = Rect::new(head.x - 16, head.y - 5,
+                let rect_sharp = Rect::new(head.x - 16, head.y - 11,
                     Textures::SHARP_W, Textures::SHARP_H);
                 env.canvas.copy(&textures.sharp, None, rect_sharp).unwrap();
             } else if accidental == Accidental::Flat {
                 textures.flat.set_color_mod(r, g, b);
-                let rect_flat = Rect::new(head.x - 15, head.y - 12,
+                let rect_flat = Rect::new(head.x - 15, head.y - 16,
                     Textures::FLAT_W, Textures::FLAT_H);
                 env.canvas.copy(&textures.flat, None, rect_flat).unwrap();
             } else {
                 textures.natural.set_color_mod(r, g, b);
-                let rect_natural = Rect::new(head.x - 12, head.y - 4,
+                let rect_natural = Rect::new(head.x - 12, head.y - 11,
                     Textures::NATURAL_W, Textures::NATURAL_H);
                 env.canvas.copy(&textures.natural, None, rect_natural).unwrap();
             }
@@ -466,9 +467,11 @@ pub fn render_staff(env: &mut Env, view: &RenderView,
     let draw_staff_line = |canvas: &mut Canvas<Window>, step_rel_c4: i32| -> Result<(), String> {
         // Y wächst nach unten. Höherer Step = kleineres Y.
         // step * (STAFF_LINE_SPACING / 2)
+
         let y = center_y - (step_rel_c4 * STAFF_LINE_SPACING / 2);
         let r = Rect::new(0, y, w as u32, STAFF_LINE_THICKNESS);
         canvas.fill_rect(r)?;
+
         Ok(())
     };
 
