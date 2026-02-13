@@ -1,10 +1,85 @@
 // =====================================================================
 // Mivi -- Ein MIDI-Synthesizer und -Visualizer (Portierung auf Rust)
 // =====================================================================
-// Version 2026-02-03
 
-// Hängt von SDL2 ab. Installieren:
-// sudo apt install libsdl2-dev libsdl2-image-dev
+// ABHÄNGIGKEITEN
+//   Hängt von SDL2 ab. Installieren unter Ubuntu/Debian:
+//   sudo apt install libsdl2-dev libsdl2-image-dev timidity
+
+const HELP: &str = r#"
+Mivi -- Version 2026-02-12
+
+VERWENDUNG
+  mivi <Datei.mid> [OPTIONEN]
+
+STEUERUNG (Tastatur)
+  SPACE / K      : Pausieren
+  J/L            : Spulen (um 10 Sekunden)
+  Links / Rechts : Spulen (um 4 Sekunden)
+  Komma / Punkt  : Spulen (um eine Sekunde)
+  F              : Vollbildmodus
+  S              : Ansicht wechseln (Piano zu Staff zu Split)
+  ESC            : Beenden
+
+OPTIONEN
+  -tm
+      Verwendet "Timidity" zur Audio-Erzeugung, statt den internen
+      einfachen Synthesizer zu nutzen. Erfordert, dass `timidity`
+      installiert und im System-Pfad verfügbar ist. Liefert je nach
+      installiertem Soundfont deutlich besseren Klang.
+
+  -aq
+      Auto-Quit: Beendet das Programm automatisch, sobald das Ende der
+      MIDI-Datei erreicht ist. Bietet sich zum Abspielen von Playlisten
+      an, was sich durch ein externes Skript bewerkstelligen lässt.
+
+  -b
+      "Black Notes": Zeichnet die Noten im Notensystem schwarz statt in
+      den Kanalfarben. Bietet eine klassischere Notenblatt-Optik mit
+      erhöhtem Kontrast.
+
+  -s
+      Startet direkt im "Staff Mode" (Notensystem-Ansicht).
+
+  -ps
+      Startet im "Piano + Staff Mode" (Geteilte Ansicht: Oben Noten,
+      unten Klavier).
+
+  --treble
+      Deaktiviert das Bass-System (Bassschlüssel). Es wird nur der
+      Violinschlüssel angezeigt.
+
+  -k<Tonart>
+      Setzt die Tonart für die Bestimmung der Vorzeichen (Kreuz / Be).
+      Bspw. "-kA" für A-Dur bzw. "-kfis" oder "-kF#m" für Fis-Moll.
+      Vorgabe ist C-Dur, alle Noten der schwarzen Tasten bekommen ein
+      Kreuz; ein Be bekommen sie nur in Be-Tonarten.
+
+  --tempo=<Faktor>
+      Modifiziert das Tempo der MIDI-Datei um den Faktor.
+      Beispiel: "--tempo=0.5" spielt das Stück halb so schnell ab.
+
+  --transpose=<Halbtöne>
+      Transponiert sowohl das Audio als auch die visuelle Darstellung.
+      Beispiel: "--transpose=+2" oder "--transpose=-12".
+
+  --transpose-staff=<Halbtöne>
+      Transponiert NUR die visuelle Darstellung im Notensystem, wogegen
+      das Audio unverändert bleibt. Diese Funktion ist praktisch für
+      1. Oktavierende Instrumente:
+         Manche Instrumente wie bspw. Sopran-Blockflöte, Piccolo-Flöte,
+         Tin Whistle und Glockenspiel werden eine Oktave tiefer notiert,
+         als sie erklingen, "--transpose-staff=-12". Manche Instrumente
+         wie Gitarre, Kontrabass werden eine Oktave höher notiert als
+         sie erklingen, "--transpose-staff=12".
+      2. Transponierende Instrumente:
+         Wenn die MIDI-Datei in der richtigen Tonhöhe vorliegt, man
+         aber vom Bildschirm mit einem transponierenden Instrument mit-
+         spielen möchte. So wird eine Tin Whistle in C-Dur einen Ganz-
+         ton höher notiert als sie erklingt, "--transpose-staff=-10".
+         Entsprechendes gilt für Klarinette, Trompete, Sopransaxophon
+         in B gestimmt, "--transpose-staff=2".
+"#.trim_ascii();
 
 use sdl2::audio::{AudioCallback, AudioSpecDesired, AudioCVT};
 use sdl2::event::Event;
@@ -85,6 +160,7 @@ struct Env {
     paused: bool,
     fullscreen: bool,
     black_notes: bool,
+    show_bass_staff: bool,
     view_mode: u8,
     root_key: KeyInfo,
 
@@ -894,9 +970,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut tempo: Option<f64> = None;
     let mut transpose: i32 = 0; // Wirkt auf Audio UND Grafik
     let mut transpose_staff: i32 = 0; // Wirkt nur auf Grafik
+    let mut show_bass_staff = true;
 
     if args.len() < 2 {
-        println!("Verwendung: {} <datei.mid> [-tm]", args[0]);
+        println!("{}", HELP);
         return Ok(());
     }
 
@@ -908,6 +985,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 "-aq" => {auto_quit = true;},
                 "-b"  => {black_notes = true;},
                 "-s"  => {view_mode = 1;},
+                "-ps" => {view_mode = 2;},
+                "--treble" => {show_bass_staff = false;},
+                "-h" | "--help" => {
+                    println!("{}", HELP);
+                    return Ok(());
+                },
                 key if key.starts_with("-k") => {
                     root_key = KeyInfo::from_name(&key[2..]);
                 },
@@ -995,8 +1078,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         paused: false,
         fullscreen: false,
         black_notes,
-        end_limit,
+        show_bass_staff,
         view_mode,
+        end_limit,
         active_keys: [false; 128],
         active_colors: [Color::RGB(0, 0, 0); 128],
         ring_buffer: StackRingBuffer::new(),

@@ -32,7 +32,6 @@ const NOTE_HEAD_HEIGHT: i32 = 14;          // Höhe des Notenkopfs (meist == Spa
 const NOTE_TRAIL_ALPHA: u8 = 100;          // Transparenz der Schweif-Spur (0-255)
 
 // Konfiguration für Liniensystem und Hilfslinien
-const SHOW_BASS_STAFF: bool = true; // "false" blendet das untere System aus
 const LEDGER_LINE_WIDTH: u32 = 26;   // Etwas breiter als der Notenkopf (18)
 
 pub struct ImageSystem {
@@ -304,7 +303,7 @@ fn render_keys(env: &mut Env, textures: &mut Textures, center_y: i32, flat: bool
         render_accidentals(env, textures, X_ACCI, g4_y - 60, flat);
     }
 
-    if SHOW_BASS_STAFF {
+    if env.show_bass_staff {
         // Bass Reference ist F3 (Step -4)
         let f3_y = center_y - (-4 * STAFF_LINE_SPACING / 2);
 
@@ -439,7 +438,8 @@ pub fn render_staff(env: &mut Env, view: &RenderView,
     let flat = is_flat_root(env.root_key.0);
 
     // Referenzpunkt: Mittleres C (C4, Midi 60) liegt vertikal in der Mitte des Fensters
-    let center_y = h / 2;
+    let center_shift = if env.show_bass_staff {0} else {40};
+    let center_y = h / 2 + center_shift;
 
     // Berechnung des "Steps" für C4
     let c4_step = get_staff_step(60, false);
@@ -486,7 +486,7 @@ pub fn render_staff(env: &mut Env, view: &RenderView,
     // G2 = -17 + 4 = -13 ? Nein:
     // C3 = -7. B2 = -8, A2 = -9, G2 = -10.
     // Bass Steps relativ zu C4: A3=-2, F3=-4, D3=-6, B2=-8, G2=-10
-    if SHOW_BASS_STAFF {
+    if env.show_bass_staff {
         let bass_steps = [-2, -4, -6, -8, -10];
         for s in bass_steps.iter() { draw_staff_line(&mut env.canvas, *s).unwrap_or(()); }
     }
@@ -583,7 +583,7 @@ pub fn render_staff(env: &mut Env, view: &RenderView,
         } else if rel_step < 2 {
             // FALL 2: Note unter der untersten Linie des Violinschlüssels (E4 / Step 2)
 
-            if !SHOW_BASS_STAFF {
+            if !env.show_bass_staff {
                 // Wenn Bass deaktiviert ist: Leiter hoch bis zum Violinschlüssel (Step 0)
                 // Wir zeichnen von der Note hoch bis zur 0 (Mittel-C Linie)
                 ledger_start = rel_step;
