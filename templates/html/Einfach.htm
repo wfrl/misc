@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Vorlage</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+body{
+  font-family: "DejaVu Sans", "Verdana", sans-serif;
+  color: #202020;
+  line-height: 1.5;
+  max-width: 48em;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 4em;
+  margin-bottom: 10em;
+  padding-left: 4%;
+  padding-right: 4%;
+}
+pre, code{
+  font-family: "DejaVu Sans Mono", "Menlo", "Consolas", monospace;
+}
+h2{
+  font-weight: normal;
+  border-bottom: 2px solid #b4b4b0;
+}
+a{color: #20506a;}
+a:hover{color: #b000b0;}
+table.bt{border-collapse: collapse;}
+table.bt td, table.bt th{
+  padding-left: 0.8em;
+  padding-right: 0.8em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  text-align: left;
+  vertical-align: top;
+}
+table.bt td{
+  border-bottom: 2px solid #d0d0c0;
+  background-color: #fafaf0;
+}
+table.bt th{
+  border-top: 2px solid #c0c0b0;
+  border-bottom: 2px solid #c0c0b0;
+  background-color: #eaeada;
+}
+.indent {
+  margin-left: 1.6em;
+}
+figure blockquote{
+  margin-left: 0em;
+  margin-bottom: 0em;
+}
+  </style>
+</head>
+<body>
+
+<h1>Titel</h1>
+<h2>Abschnitt</h2>
+<h3>Unterabschnitt</h3>
+
+<p>Link: <a href="https://www.example.com/">www.example.com</a>.
+
+<table class="bt">
+<tr>
+<th>Text
+<th>Text
+<tr>
+<td>Text
+<td>Text
+</table>
+
+<p>Kräutertee:
+
+<ul>
+<li>Pfefferminze
+<li>Minze
+<li>Hagebutte
+</ul>
+
+<dl>
+<dt>An und für sich ästhetische Unkräuter
+<dd>Ackerwinde, Zaunwinde
+<dt>Grundsätzlich störende Unkräuter
+<dd>Wilde Brombeere, Löwenzahn
+</dl>
+
+<p>Lorem ipsum dolor sit amet, consectetur adipisici elit, sed
+eiusmod tempor incidunt ut labore et dolore magna aliqua. Ut enim
+ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+aliquid ex ea commodi consequat. Quis aute iure reprehenderit in
+voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+Excepteur sint obcaecat cupiditat non proident, sunt in culpa qui
+officia deserunt mollit anim id est laborum.
+
+<p>Duis autem vel eum iriure dolor in hendrerit in vulputate velit
+esse molestie consequat, vel illum dolore eu feugiat nulla facilisis
+at vero eros et accumsan et iusto odio dignissim qui blandit
+praesent luptatum zzril delenit augue duis dolore te feugait nulla
+facilisi. Lorem ipsum dolor sit amet, consectetuer adipiscing elit,
+sed diam nonummy nibh euismod tincidunt ut laoreet dolore magna
+aliquam erat volutpat.
+
+<figure class="quote">
+<blockquote>
+»Die Grenzen meiner Sprache bedeuten die Grenzen meiner Welt.«
+</blockquote>
+<figcaption>— Ludwig Wittgenstein, <cite>Tractatus
+logico-philosophicus</cite>, Abschnitt 5.6.</figcaption>
+</figure>
+
+<p>Mit <code>fractal</code> ein Bild erzeugen:
+
+<figure class="code">
+<pre class="py">
+<b>def</b> fractal(filename, z0, f, w = 720, h = 480, max_iter = 100,
+    pos = 0, scale = 1, gradient = 1):
+    a = 4*scale/w; g = 0.04*gradient
+    <b>with</b> open(filename, 'wb') <b>as</b> file:
+        file.write(f"P6\n{w} {h}\n255\n".encode())
+        <b>for</b> y <b>in</b> range(h):
+            <b>for</b> x <b>in</b> range(w):
+                c = complex(a*(x - 0.5*w), - a*(y - 0.5*h)) - pos
+                z = z0(c); n = 0
+                <b>while</b> abs(z) &lt;= 2 <b>and</b> n &lt; max_iter:
+                    z = f(z, c)
+                    n += 1
+                <b>if</b> n == max_iter:
+                    color = 0
+                <b>else</b>:
+                    color = int(255 - 255*g*n/(g*n + 1))
+                file.write(bytes([color, color, color]))
+
+fractal("Mandelbrot-Menge.ppm", pos = 0.5,
+    z0 = lambda c: 0,
+    f = lambda z, c: z*z + c)
+
+fractal("Julia-Menge.ppm",
+    z0 = lambda z: z,
+    f = lambda z, c: z*z - 0.8 + 0.2j)
+</pre>
+</figure>
+
+</body>
+</html>
