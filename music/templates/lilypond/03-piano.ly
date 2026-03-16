@@ -21,7 +21,7 @@ upper = \fixed c'' {
   \key cis\minor
   \numericTimeSignature
   \time 6/8
-  \tempo 4 = 60
+  \tempo 4 = 50
   e8 e8 e8 e8^\mp e8 e8 | dis8 (e8 fis8 gis4.) |
   <e cis'>8 (gis8 e8 fis4.) | <dis fis>8 (<dis gis>8 <dis b>8 gis4.) |
   fis8 fis8 fis8 fis8 fis8 fis8 | e4.~e4. \bar "|."

@@ -27,7 +27,7 @@ melody = \fixed c' {
   }
 }
 
-\score{
+\score {
   \new Staff {
     \numericTimeSignature
     \time 2/4
