@@ -1,0 +1,333 @@
+\documentclass[
+  a4paper, 11pt, fleqn, twoside,
+  abstract=true
+]{scrartcl}
+\usepackage[ngerman]{babel}
+\usepackage[T1]{fontenc}
+
+\newif\ifscreen
+\screentrue
+
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amsthm}
+% \usepackage{mathtools}
+
+\usepackage{libertine}
+\usepackage[libertine]{newtxmath}
+\usepackage[scaled=0.78]{DejaVuSansMono}
+% \usepackage{bm}
+
+% \usepackage{tikz}
+% \usepackage{tikz-cd}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{microtype}
+% \usepackage{lipsum}
+
+% \usepackage{enumitem}
+% \setlist{nosep}
+
+\ifscreen
+  \definecolor{clink}{RGB}{0, 60, 140}
+  \definecolor{ccite}{RGB}{120, 0, 160}
+  \definecolor{curl}{RGB}{180, 0, 180}
+\else
+  \definecolor{clink}{RGB}{0, 0, 0}
+  \definecolor{ccite}{RGB}{0, 0, 0}
+  \definecolor{curl}{RGB}{0, 0, 0}
+\fi
+
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=clink,
+  citecolor=ccite,
+  urlcolor=curl,
+  pdftitle={Ententheorie},
+  pdfauthor={Donald Duck}
+}
+
+\usepackage[a4paper,
+  left=30mm, right=30mm, top=16mm, bottom=30mm,
+  includehead, headheight=5mm
+]{geometry}
+
+\usepackage[headsepline=0.8pt]{scrlayer-scrpage}
+\clearpairofpagestyles
+\automark[subsection]{section}
+\ohead{\pagemark}
+\ihead{\headmark}
+\addtokomafont{pagehead}{\upshape}
+
+% \linespread{1.04}
+\setkomafont{disposition}{\normalfont\bfseries}
+
+\makeatletter
+\renewenvironment{proof}[1][\proofname]{\par
+  \normalfont\topsep2\p@\@plus2\p@\relax
+  \trivlist
+  \item[\hskip\labelsep\bfseries #1\@addpunct{.}]\ignorespaces
+}{\endtrivlist\@endpefalse}
+\makeatother
+
+\theoremstyle{plain}
+\newtheorem{theorem}{Satz}[section]
+% \newtheorem{lemma}[theorem]{Lemma}
+% \newtheorem{corollary}[theorem]{Korollar}
+% \newtheorem{proposition}[theorem]{Proposition}
+
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+% \newtheorem{example}[theorem]{Beispiel}
+
+\newcommand{\strong}[1]{\textbf{#1}}
+\newcommand{\keywords}[1]{%
+  \vspace{0.6em}\noindent\strong{Schlagwörter:} #1}
+
+\lstset{
+  basicstyle=\ttfamily,
+  numbers=left,
+  xleftmargin=\mathindent,
+  % showstringspaces=false,
+  upquote=true
+}
+
+\newcommand{\N}{\mathbb N}
+\newcommand{\Z}{\mathbb Z}
+\newcommand{\Q}{\mathbb Q}
+\newcommand{\R}{\mathbb R}
+\newcommand{\C}{\mathbb C}
+% \newcommand{\ui}{\mathrm i}
+% \newcommand{\ee}{\mathrm e}
+
+% \newcommand{\cond}{\rightarrow}
+% \newcommand{\bicond}{\leftrightarrow}
+% \newcommand{\lnec}{\Box}
+% \newcommand{\lpos}{\Diamond}
+
+% \newcommand{\compc}{\mathsf c}
+% \newcommand{\setsystem}[1]{\mathcal{#1}}
+% \newcommand{\powerset}{\setsystem P}
+% \newcommand{\category}[1]{\mathcal{#1}}
+% \DeclareMathOperator{\id}{id}
+
+\title{Ententheorie}
+\subtitle{Eine konservative Vorlage für\\ mathematische Artikel}
+\author{Donald Duck\\ \large\texttt{duck@example.com}}
+\date{1. Jan. 2000}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}\noindent
+Es wird der Kontraktionssatz zur Fixpunktiteration gezeigt und damit
+anschließend als praktisches Beispiel ein Berechnungsverfahren
+diskutiert.
+
+\keywords{Fixpunktiteration, Fixpunktsatz von Banach,
+Kontraktion, Grenzwert, Dehnungsbeschränktheit (Lipschitz-Stetigkeit),
+Cauchyfolge, geometrische Summenformel.}
+\end{abstract}
+
+\tableofcontents
+
+\section{Theoretische Überlegungen}
+
+\subsection{Fixpunktiteration}
+
+Zu einer in Fixpunktform $x=f(x)$ gebrachten Gleichung lassen sich
+Lösungen unter Umständen mit der Iteration $x_{n+1} := f(x_n)$, und
+dies dann recht unempfindlich vom Startwert $x_0$, beliebig gut annähern.
+Im Folgenden wird untersucht, unter welchen Umständen sich die Iteration
+gutmütig verhalten muss. Wir folgen den Ausführungen in \cite{Heuser1}.
+
+\begin{theorem}
+Zu einer monoton steigenden stetigen Funktion $f\colon [a,b]\to [a,b]$
+konvergiert die Folge $x_{n+1} := f(x_n)$ zu jedem $x_0\in [a,b]$ monoton
+gegen einen Fixpunkt von $f$.
+\end{theorem}
+
+\begin{proof}
+Induktiv klärt sich, dass $x_n\in [a,b]$ und $x_{n+1}\ge x_n$ bei
+$x_1\ge x_0$ oder $x_{n+1}\le x_n$ bei $x_1\le x_0$ für jedes
+$n\in\N$ gilt. Da die Folge $(x_n)$ also in jedem Fall monoton und durch
+$a,b$ beschränkt ist, muss sie einen Grenzwert $c\in [a,b]$ besitzen.
+Und weil $f$ stetig ist, gilt zu diesem die Termumformung
+\[f(c) = f(\lim_{n\to\infty} x_n) = \lim_{n\to\infty} f(x_n) =
+\lim_{n\to\infty} x_{n+1} = \lim_{n\to\infty} x_n = c,\]
+kurz $f(c) = c$, womit $c$ ein Fixpunkt von $f$ sein muss.\,\qedsymbol
+\end{proof}
+
+\subsection{Kontraktionssatz}
+
+Der folgende Spezialfall des banachschen Fixpunktsatzes zeigt Umstände
+auf, unter denen der Fixpunkt eindeutig bestimmt ist.
+
+\begin{definition}[Dehnungsbeschränktheit]
+Eine Funktion $f\colon X\to\R$ mit $X\subseteq\R$ heißt
+\emph{dehnungsbeschränkt} oder \emph{Lipschitz"=stetig}, wenn es eine
+Konstante $q\ge 0$ gibt, so dass $|f(x)-f(y)| \le q|x-y|$ für alle
+$x,y\in X$ gilt.
+\end{definition}
+
+\noindent
+Grafisch gesehen wird ein Doppelkegel mit festem Anstieg $q$ an einen
+beliebigen Punkt auf dem Funktionsgraphen angeheftet, so dass die
+Kegelspitzen auf dem Graph liegen. Der Funktionsgraph darf den Kegel
+berühren, aber nicht in ihn eintauchen.
+
+\begin{theorem}[Kontraktionssatz]
+Eine Funktion $f\colon [a,b]\to [a,b]$, die mit Dehnungsschranke $q<1$
+kontrahiert, besitzt genau einen Fixpunkt $c$. Dieser ist Grenzwert
+der Folge $x_{n+1} := f(x_n)$, wobei der Startwert $x_0\in [a,b]$ frei
+gewählt werden darf. Hierbei gilt die Fehlerabschätzung
+\[|c-x_n| \le \frac{q^n}{1-q}|x_1-x_0|.\]
+\end{theorem}
+
+\begin{proof}
+Laut der Kontraktionseigenschaft gilt
+\[|x_{n+1}-x_n| = |f(x_n)-f(x_{n-1})| \le q|x_n-x_{n-1}|\]
+für $n\ge 1$. Induktiv erhält man somit $|x_{n+1}-x_n|\le q^n|x_1-x_0|$.
+Via Teleskopieren, Dreiecksungleichung und geometrischer Summenformel
+findet sich zu jedem $k$ demnach
+\begin{align*}
+|x_{n+k}-x_n| &= \bigg|\sum_{i=1}^k (x_{n+i}-x_{n+i-1})\bigg|
+\le \sum_{i=1}^k |x_{n+i}-x_{n+i-1}|\\
+&\le \sum_{i=1}^k q^{n+i-1}|x_1-x_0|
+= q^n\frac{1-q^k}{1-q}|x_1-x_0|\le \frac{q^n}{1-q}|x_1-x_0|.
+\end{align*}
+Insofern $q<1$ ist, muss $(x_n)$ somit eine Cauchyfolge mit Grenzwert
+$c\in [a,b]$ sein. Weil $f$ als dehnungsbeschränkte Funktion erst
+recht stetig ist, hat man außerdem wieder $f(c)=c$, womit $c$ ein
+Fixpunkt von $f$ ist. Ist $d$ mit $f(d)=d$ nun ein beliebiger weiterer
+Fixpunkt, dann gilt aufgrund der Kontraktionseigenschaft die Ungleichung
+\[|c-d| = |f(c)-f(d)|\le q|c-d|,\]
+was aber nur für $|c-d|=0$, also $c=d$ möglich ist. Demnach ist der
+Fixpunkt eindeutig. Die Fehlerabschätzung ergibt sich schließlich bei
+$k\to\infty$.\,\qedsymbol
+\end{proof}
+
+\section{Eine Beispieldiskussion}
+
+\subsection{Aufstellung der Iteration}
+
+Zur praktischen Anwendung des Kontraktionssatzes wollen wir ein
+Verfahren zur Berechnung der Quadratwurzel aufstellen, wenngleich
+es mit dem Heron"= bzw. Newton"=Verfahren wesentlich
+effizientere Ansätze geben mag.
+
+Zur Berechnung der Quadratwurzel $\sqrt{a}$ bietet sich
+die Iteration $x_{n+1} := f(x_n)$ mit
+\[X :=[\sqrt{a},a+1],\quad f\colon X\to X, \quad
+f(x) := x + \frac{a-x^2}{2(a+1)}\]
+an. Monotones Steigen liegt vor, falls $f'(x)\ge 0$ gilt. Mit
+$f'(x) = 1 - \frac{x}{a+1}$ führt die Forderung auf die Ungleichung
+$\frac{x}{a+1}\le 1$, die wegen $a>0$ äquivalent zu $x\le a+1$ umgeformt
+werden darf. Der Graph der Funktion $f'$ ist genau die von $(0,1)$
+nach $(a+1,0)$ verlaufende Gerade. Als kleinstmögliche Dehnungsschranke
+bekommt man daher $q=f'(\sqrt{a})$.\footnote{Streng genommen wäre hier
+explizit der Mittelwertsatz der Differentialrechnung anzuwenden, um den
+Bezug zwischen maximalem Anstieg und Dehnungsbeschränktheit herzustellen:
+Laut diesem gibt es zu beliebigen $x,y\in X$ ein $u\in X$, so dass
+$|f(x)-f(y)| = |f'(u)||x-y|$. Weiter gilt immer $|f'(u)|\le q$, insofern
+$q$ der maximale Anstieg ist. Demnach gilt $|f(x)-f(y)| \le q|x-y|$.}
+
+Man überzeugt sich unschwer von $\sqrt{a}<a+1$, womit das Intervall $X$
+wohldefiniert ist. Es verbleibt noch zu prüfen, ob $f$ mit $f(X)\subseteq X$
+wohldefiniert ist. Da $f$ monoton steigt, genügt es,
+$[f(\sqrt{a}),f(a+1)]\subseteq X$ zu prüfen, also $\sqrt{a}\le f(\sqrt{a})$
+und $f(a+1)\le a+1$, was unschwer zu bewältigen ist.
+
+\subsection{Berechnung der Iteration}
+
+Wir führen zu $a := 2$ eine Beispielrechnung durch. Man hat
+$q\approx 0.528595$ als Dehnungsschranke, was bedeutet, dass sich der
+abgeschätzte Fehler in jedem Schritt ungefähr halbiert. Die Berechnung
+wird gemäß Listing \ref{lst:Berechnung} ausgeführt und ist in
+Tabelle \ref{tab:Berechnung} aufgeführt.
+
+\begin{table}
+\begin{center}
+\caption{Berechnung von $\sqrt{2}$}\label{tab:Berechnung}
+\begin{tabular}{@{}cc@{}}
+\begin{tabular}{rccc}
+\toprule
+$n$ & $x_n$ & $|c-x_n|$ & $\frac{q^n}{1-q}|x_1-x_0|$\\
+\midrule
+$ 1$ & $1.833333$ & $4.19\times 10^{-1}$ & $1.31\times 10^{-0}$\\
+$ 2$ & $1.606481$ & $1.92\times 10^{-1}$ & $6.92\times 10^{-1}$\\
+$ 3$ & $1.509684$ & $9.55\times 10^{-2}$ & $3.66\times 10^{-1}$\\
+$ 4$ & $1.463160$ & $4.89\times 10^{-2}$ & $1.93\times 10^{-1}$\\
+\midrule
+$ 5$ & $1.439687$ & $2.55\times 10^{-2}$ & $1.02\times 10^{-1}$\\
+$ 6$ & $1.427571$ & $1.34\times 10^{-2}$ & $5.40\times 10^{-2}$\\
+$ 7$ & $1.421244$ & $7.03\times 10^{-3}$ & $2.85\times 10^{-2}$\\
+$ 8$ & $1.417922$ & $3.71\times 10^{-3}$ & $1.51\times 10^{-2}$\\
+\midrule
+$ 9$ & $1.416171$ & $1.96\times 10^{-3}$ & $7.97\times 10^{-3}$\\
+$10$ & $1.415248$ & $1.03\times 10^{-3}$ & $4.21\times 10^{-3}$\\
+$11$ & $1.414760$ & $5.47\times 10^{-4}$ & $2.23\times 10^{-3}$\\
+$12$ & $1.414502$ & $2.89\times 10^{-4}$ & $1.18\times 10^{-3}$\\
+\bottomrule
+\end{tabular}
+&
+\begin{tabular}{rccc}
+\toprule
+$n$ & $x_n$ & $|c-x_n|$ & $\frac{q^n}{1-q}|x_1-x_0|$\\
+\midrule
+$13$ & $1.414366$ & $1.53\times 10^{-4}$ & $6.23\times 10^{-4}$\\
+$14$ & $1.414294$ & $8.07\times 10^{-5}$ & $3.29\times 10^{-4}$\\
+$15$ & $1.414256$ & $4.27\times 10^{-5}$ & $1.74\times 10^{-4}$\\
+$16$ & $1.414236$ & $2.25\times 10^{-5}$ & $9.19\times 10^{-5}$\\
+\midrule
+$17$ & $1.414225$ & $1.19\times 10^{-5}$ & $4.86\times 10^{-5}$\\
+$18$ & $1.414220$ & $6.30\times 10^{-6}$ & $2.57\times 10^{-5}$\\
+$19$ & $1.414217$ & $3.33\times 10^{-6}$ & $1.36\times 10^{-5}$\\
+$20$ & $1.414215$ & $1.76\times 10^{-6}$ & $7.18\times 10^{-6}$\\
+\midrule
+$21$ & $1.414214$ & $9.30\times 10^{-7}$ & $3.79\times 10^{-6}$\\
+$22$ & $1.414214$ & $4.92\times 10^{-7}$ & $2.01\times 10^{-6}$\\
+$23$ & $1.414214$ & $2.60\times 10^{-7}$ & $1.06\times 10^{-6}$\\
+$24$ & $1.414214$ & $1.37\times 10^{-7}$ & $5.60\times 10^{-7}$\\
+\bottomrule
+\end{tabular}
+\end{tabular}
+\end{center}
+\end{table}
+
+\begin{figure}
+\begin{lstlisting}[language=Python,
+caption={Berechnungsverfahren}, label={lst:Berechnung}]
+from math import sqrt
+
+a = 2
+q = 1 - sqrt(a)/(a + 1)
+x0 = a + 1
+
+def f(x):
+    return x + (a - x*x)/(2*a + 2)
+
+def err_esti(n):
+    return q**n/(1 - q)*abs(f(x0) - x0)
+
+x = x0; c = sqrt(a)
+for n in range(1, 25):
+    x = f(x)
+    e1 = abs(c - x); e2 = err_esti(n)
+    print(f"{n:2}  {x:.6f}  {e1:.2E}  {e2:.2E}")
+    if n%4 == 0: print()
+\end{lstlisting}
+\end{figure}
+
+% \lipsum[1-40]
+
+\begin{thebibliography}{00}
+\bibitem{Heuser1} Harro Heuser: \emph{Lehrbuch der Analysis. Teil 1}.
+  Vieweg+Teubner, 17. Auflage, Wiesbaden 2009.\\
+  \href{https://doi.org/10.1007/978-3-322-94702-4}{doi:10.1007/978-3-322-94702-4}.
+  ISBN 978-3-8348-0777-9.
+\end{thebibliography}
+
+\end{document}
