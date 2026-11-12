@@ -1,0 +1,83 @@
+
+# Peano arithmetic
+
+# DEFINITIONS
+
+# Declares opaque constant and function symbols
+# so that they no longer act as free variables.
+decl O: Ind.
+decl S: Ind → Ind.
+decl add: Ind → Ind → Ind.
+decl mul: Ind → Ind → Ind.
+
+# There is builtin syntax:
+# `add a b` may be written `a + b`,
+# `mul a b` may be written `a⋅b`.
+
+# Defines a relation
+le_equi. ⊢ a ≤ b ↔ ∃n. a + n = b, def.
+
+# AXIOMS
+
+eq_refl. ⊢ x = x, axiom.
+eq_subst. ⊢ x = y → P x → P y, axiom.
+
+add_zero. ⊢ a + O = a, axiom.
+add_succ. ⊢ a + S b = S (a + b), axiom.
+
+mul_zero. ⊢ a⋅O = O, axiom.
+mul_succ. ⊢ a⋅(S b) = a⋅b + a, axiom.
+
+induction. ⊢ P O → (∀n. P n → P (S n)) → (∀n. P n), axiom.
+
+# SOME PROOFS
+
+01. 1 ⊢ x = y, hypo.
+02. 1 ⊢ y = x, eq_subst 1 eq_refl, P u ↔ u = x.
+eq_symm. ⊢ x = y → y = x, subj_intro 2.
+
+01. 1 ⊢ x = y, hypo.
+02. 2 ⊢ y = z, hypo.
+03. 1 ⊢ y = x, eq_symm 1.
+04. 1, 2 ⊢ x = z, eq_subst 3 2, P u ↔ u = z.
+eq_trans. ⊢ x = y → y = z → x = z, subj_intro_ii 4.
+
+1. 1 ⊢ x = y, hypo.
+2. ⊢ f x = f x, eq_refl.
+3. 1 ⊢ f x = f y, eq_subst 1 2, P u ↔ f x = f u.
+eq_cong. ⊢ x = y → f x = f y, subj_intro 3.
+
+1. ⊢ S O + S O = S (S O + O), add_succ.
+2. ⊢ S O + O = S O, add_zero.
+one_plus_one. ⊢ S O + S O = S (S O), eq_subst 2 1,
+  P x ↔ S O + S O = S x.
+
+# Induction base
+1. ⊢ a + b + O = a + b, add_zero.
+2. ⊢ a = a + O, eq_symm add_zero.
+3. ⊢ b = b + O, 2.
+4. ⊢ a + b = a + b, eq_refl.
+5. ⊢ a + b = a + (b + O), eq_subst 3 4, P x ↔ a + b = a + x.
+6. ⊢ a + b + O = a + (b + O), eq_trans 1 5.
+
+# Induction step
+7. 7 ⊢ a + b + n = a + (b + n), hypo.
+8. 7 ⊢ S (a + b + n) = S (a + (b + n)), eq_cong 7, f x = S x.
+9. ⊢ a + b + S n = S (a + b + n), add_succ.
+10. 7 ⊢ a + b + S n = S (a + (b + n)), eq_trans 9 8.
+11. ⊢ b + S n = S (b + n), add_succ.
+12. ⊢ S (b + n) = b + S n, eq_symm 11.
+13. ⊢ a + S (b + n) = a + (b + S n), eq_cong 12, f x = a + x.
+14. ⊢ a + S (b + n) = S (a + (b + n)), add_succ.
+15. ⊢ S (a + (b + n)) = a + S (b + n), eq_symm 14.
+16. ⊢ S (a + (b + n)) = a + (b + S n), eq_trans 15 13.
+17. 7 ⊢ a + b + S n = a + (b + S n), eq_trans 10 16.
+18. ⊢ a + b + n = a + (b + n) → a + b + S n = a + (b + S n),
+  subj_intro 17.
+19. ⊢ ∀n. a + b + n = a + (b + n) → a + b + S n = a + (b + S n),
+  uq_intro 18.
+
+# Proof by induction
+20. ⊢ ∀n. (a + b) + n = a + (b + n), induction 6 19.
+add_assoc. ⊢ (a + b) + c = a + (b + c), uq_elim 20.
+

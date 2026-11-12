@@ -1,0 +1,43 @@
+
+# Examples of propositional calculus
+
+1. 1 ⊢ A ∧ B, hypo.
+2. 1 ⊢ A, conj_eliml 1.
+3. 1 ⊢ B, conj_elimr 1.
+4. 1 ⊢ B ∧ A, conj_intro 3 2.
+5. ⊢ A ∧ B → B ∧ A, subj_intro 4.
+
+1. 1 ⊢ A ∨ B, hypo.
+2. 2 ⊢ A, hypo.
+3. 3 ⊢ B, hypo.
+4. 3 ⊢ B ∨ A, disj_introl 3.
+5. 2 ⊢ B ∨ A, disj_intror 2.
+6. 1 ⊢ B ∨ A, disj_elim 1 5 4.
+7. ⊢ A ∨ B → B ∨ A, subj_intro 6.
+
+1. 1 ⊢ ¬B, hypo.
+2. 2 ⊢ A → B, hypo.
+3. 3 ⊢ A, hypo.
+4. 2, 3 ⊢ B, subj_elim 2 3.
+5. 1, 2, 3 ⊢ ⊥, neg_elim 1 4.
+6. 2, 1 ⊢ ¬A, neg_intro 5.
+7. 2 ⊢ ¬B → ¬A, subj_intro 6.
+8. ⊢ (A → B) → (¬B → ¬A), subj_intro 7.
+
+1. 1 ⊢ A, hypo.
+2. 2 ⊢ B, hypo.
+3. 1, 2 ⊢ A, wk 1.
+4. 1 ⊢ B → A, subj_intro 3.
+5. ⊢ A → (B → A), subj_intro 4.
+
+dne. ⊢ ¬¬A → A, axiom.
+
+1. 1 ⊢ ¬(A ∨ ¬A), hypo.
+2. 2 ⊢ A, hypo.
+3. 2 ⊢ A ∨ ¬A, disj_introl 2.
+4. 1, 2 ⊢ ⊥, neg_elim 1 3.
+5. 1 ⊢ ¬A, neg_intro 4.
+6. 1 ⊢ A ∨ ¬A, disj_intror 5.
+7. 1 ⊢ ⊥, neg_elim 1 6.
+8. ⊢ ¬¬(A ∨ ¬A), neg_intro 7.
+lem_from_dne. ⊢ A ∨ ¬A, dne 8.

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Handbuch zu nd</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+body{
+  font-family: "DejaVu Sans", "Verdana", sans-serif;
+  color: #202020;
+  line-height: 1.5;
+  max-width: 52em;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 4em;
+  margin-bottom: 10em;
+  padding-left: 4%;
+  padding-right: 4%;
+}
+pre, code{
+  font-family: "DejaVu Sans Mono", "Menlo", "Consolas", monospace;
+}
+code {
+  background-color: #eaeae0;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 2px solid #d0d0d0;
+}
+h2{
+  font-weight: normal;
+  border-bottom: 2px solid #b4b4b0;
+}
+a{color: #20506a;}
+a:hover{color: #b000b0;}
+table.bt{border-collapse: collapse;}
+table.bt td, table.bt th{
+  padding-left: 0.8em;
+  padding-right: 0.8em;
+  padding-top: 0.2em;
+  padding-bottom: 0.2em;
+  text-align: left;
+  vertical-align: top;
+}
+table.bt td{
+  border-bottom: 2px solid #d0d0ca;
+  background-color: #fafaf4;
+}
+table.bt th{
+  border-top: 2px solid #c0c0ba;
+  border-bottom: 2px solid #c0c0ba;
+  background-color: #eaeae0;
+}
+.indent {
+  margin-left: 1.6em;
+}
+figure blockquote{
+  margin-left: 0em;
+  margin-bottom: 0em;
+}
+.cbox {
+  background-color: #f6f6f0;
+  border-left: 8px solid #e0e0da;
+  padding-left: 12px;
+}
+.terminal {
+  color: #e0e0e0;
+  background-color: #202020;
+  border-left: 8px solid #808080;
+  padding-left: 12px;
+}
+  </style>
+</head>
+<body>
+
+<h1>Handbuch zum Beweisprüfer nd</h1>
+
+<h2>Inhaltsverzeichnis</h2>
+<ol>
+<li><a href="#Ueberblick">Überblick</a>
+  <ol>
+  <li><a href="#Bestimmung">Bestimmung des Programms</a>
+  <li><a href="#Vorgehensweise">Vorgehensweise</a>
+  </ol>
+<li><a href="#Erste-Schritte">Erste Schritte</a>
+  <ol>
+  <li><a href="#Bedienung">Bedienung des Programms</a>
+  <li><a href="#Dokumentation">Dokumentation erstellen</a>
+  <li><a href="#Beweiszeile">Aufbau einer Beweiszeile</a>
+  <li><a href="#KdnS">Natürliches Schließen</a>
+  </ol>
+<li><a href="#Details">Detaillierte Beschreibung</a>
+  <ol>
+  <li><a href="#Syntax">Eingebaute Syntax</a>
+  <li><a href="#Typsystem">Typsystem</a>
+  </ol>
+<li><a href="#Einschraenkungen">Einschränkungen</a>
+<li><a href="#Literatur">Literaturverzeichnis</a>
+</ol>
+
+<h2 id="Ueberblick">Überblick</h2>
+
+<h3 id="Bestimmung">Bestimmung des Programms</h3>
+
+<p>Beim Beweisen mathematischer Theoreme schleichen sich leicht Denk- oder Flüchtigkeitsfehler ein. Das Programm <code>nd</code> schafft Abhilfe, indem es eine formalisierte Fassung der Beweise prüft. Es handelt sich um einen <i>Beweisprüfer</i> für den <i>Kalkül des natürlichen Schließens</i>, man spricht vom <i>maschinengestützten Beweisen</i>. Unterstützt werden intuitionistische, klassische und modale Logik samt ihren jeweiligen einsortigen Logiken erster Stufe mit nichtleerem Diskursuniversum. Neben Logik bedarf es auch an Konzepten, um mathematische Strukturen beschreiben zu können. Hierfür wird in der Regel eine <i>axiomatische Mengenlehre</i> eingesetzt. Um welche Mengenlehre es sich handelt, ist nicht fest vorgegeben, sondern wird in der Eingabe durch frei wählbare Axiome abgegrenzt.
+
+<p><small>Bemerkung: Das Programm ist ein reiner Prüfer, kein Theorembeweiser; es sucht nicht automatisch nach Beweisen. Es ist auch kein interaktiver Beweisassisent.</small>
+
+<h3 id="Vorgehensweise">Vorgehensweise</h3>
+
+<p>Ein Beweis setzt sich aus einer Liste von Beweisschritten zusammen, die im Wesentlichen dem Suppes-Style [<a href="#ref-Suppes">1</a>] entspricht. In jedem Beweisschritt wird eine Schlussregel angewendet, um eine weitere Sequenz <code>Γ&nbsp;⊢&nbsp;A</code> aus bereits gezeigten Sequenzen abzuleiten. Die Sequenz trifft dabei das Urteil, dass die Aussage <code>A</code> aus den Aussagen in <code>Γ</code> ableitbar sei. Genau genommen ist diese Sequenz als <code>H&nbsp;⊢&nbsp;A</code> kodiert, wobei <code>H</code> die Konjunktion der Aussagen von <code>Γ</code> meint und als <i>Hypothese</i> aufgefasst wird.
+
+<p>Zur Verdeutlichung wird eine kurze Beweisführung aufgezeigt, die das in der folgenden Tabelle dargestellte Fragment des natürlichen Schließens von drei Schlussregeln nutzt.
+
+<table class="bt">
+<tr>
+<th>Hypothesenregel
+<th>Konjunktionsbeseitigung
+<th>Subjunktionseinführung
+<tr>
+<td>
+<pre style="line-height: 0.9">
+
+─────
+A ⊢ A
+</pre>
+<td>
+<pre style="line-height: 0.9">
+Γ ⊢ A ∧ B
+─────────
+Γ ⊢ A
+</pre>
+<td>
+<pre style="line-height: 0.9">
+Γ, A ⊢ B
+─────────
+Γ ⊢ A → B
+</pre>
+<tr>
+<td>Die Aussage <code>A</code> ist unter ihrer eigenen Annahme
+ableitbar.
+<td>Ist die Aussage <code>A ∧ B</code> im Kontext <code>Γ</code> ableitbar,
+so auch <code>A</code>.
+<td>Ist die Aussage <code>B</code> im Kontext <code>Γ</code> unter
+zusätzlicher Annahme <code>A</code> ableitbar, so ist <code>A → B</code>
+ohne diese Annahme ableitbar.
+</table>
+
+<p>Zum Beweis des Theorems <code>A ∧ B → A</code> werden die Regeln schrittweise angewendet. Im Allgemeinen entsteht dabei ein Beweisbaum oder gerichteter azyklischer Graph mit den Hypothesen in den Blättern und dem bewiesenen Theorem in der Wurzel. Hier vereinfacht sich dies zu einem einzigen Ast bzw. Pfad.
+
+<pre class="indent" style="line-height: 0.9">
+───────────── Hypothese
+A ∧ B ⊢ A ∧ B
+───────────── Konjbes.
+A ∧ B ⊢ A
+─────────── Subjeinf.
+⊢ A ∧ B → A
+</pre>
+
+<p>Wir linearisieren den Baum, indem die Knoten nummeriert und aufgelistet werden. Die Schlussregeln sind nicht fest eingebaut, sondern werden in der Eingabe mitgeliefert. Der Beweisprüfer verarbeitet diesbzgl. die folgende formalisierte Eingabe.
+
+<pre class="cbox">
+decl verum: Prop.
+decl conj: Prop → Prop → Prop.
+decl subj: Prop → Prop → Prop.
+decl seq : Prop → Prop → Prop.
+
+hypo. (⊤ ∧ A ⊢ A), rule.
+conj_eliml. (H ⊢ A ∧ B) → (H ⊢ A), rule.
+subj_intro. (H ∧ A ⊢ B) → (H ⊢ A → B), rule.
+
+1. ⊤ ∧ (A ∧ B) ⊢ A ∧ B, hypo.
+2. ⊤ ∧ (A ∧ B) ⊢ A, conj_eliml 1.
+3. ⊤ ⊢ A ∧ B → A, subj_intro 2.
+</pre>
+
+<p>Zur ergonomischen Handhabung werden die Annahmen mit den Nummern abgekürzt, in denen sie unternommen wurden. Das explizite Mitführen des Verums <code>⊤</code> darf dabei entfallen. Zudem werden die Deklaration der Junktoren sowie die Schlussregeln standardmäßig durch ein Präludium geladen, so dass man sie nicht aufführen braucht. Die Eingabe verkürzt sich somit zu:
+
+<pre class="cbox">
+1. 1 ⊢ A ∧ B, hypo.
+2. 1 ⊢ A, conj_eliml 1.
+3. ⊢ A ∧ B → A, subj_intro 2.
+</pre>
+
+<h2 id="Erste-Schritte">Erste Schritte</h2>
+
+<h3 id="Bedienung">Bedienung des Programms</h3>
+
+<p>In eine Datei <code>Beweise.txt</code> wird die folgende Eingabe geschrieben:
+
+<pre class="cbox">
+1. 1 |- A /\ B, hypo.
+2. 1 |- A, conj_eliml 1.
+Mein_Theorem. |- A /\ B -&gt; A, subj_intro 2.
+</pre>
+
+<p>Im Terminal ruft man im jeweiligen Arbeitsverzeichnis nun auf
+
+<pre class="terminal">
+nd Beweise.txt
+</pre>
+
+<p>Bleibt das Programm still, ist der Beweis korrekt. Hat es etwas zu beanstanden, wird es sich melden. Wir fügen nun die Datei <code>manifest.txt</code> mit dem Inhalt
+
+<pre class="cbox">
+(Beweise:)
+</pre>
+
+<p>hinzu. Dies bedeutet, dass das Beweismodul <code>Beweise</code>, dessen Quelltext in <code>Beweise.txt</code> steht, zu prüfen ist, wobei dessen Abhängigkeiten hinter dem Doppelpunkt aufgeführt sind. Da keine Abhängigkeiten vorliegen, bleibt es hinter dem Doppelpunkt leer. Nun genügt der Aufruf <code>nd</code> ohne Argumente im Terminal. Die zu prüfenden Beweismodule werden dahingehend automatisch aus dem Manifest gelesen.
+
+<p>Wird im Terminal nun der Programmaufruf
+
+<pre class="terminal">
+nd -f Beweise.txt
+</pre>
+
+<p>ausgeführt, wird die Eingabe formatiert, dergestalt dass Unicode-Symbole die ASCII-Notation ersetzen. Formatierbar sind nur im Manifest aufgeführte Module, damit man nicht versehentlich durch Tippfehler eine andere Datei beschädigt. Der Inhalt ist jetzt von folgender Gestalt:
+
+<pre class="cbox">
+1. 1 ⊢ A ∧ B, hypo.
+2. 1 ⊢ A, conj_eliml 1.
+Mein_Theorem. ⊢ A ∧ B → A, subj_intro 2.
+</pre>
+
+<p><small>Bemerkung: Die Hausschrift dieses Programms ist <i>DejaVu Sans Mono</i>. Es werden nur Symbole genutzt, die in diesem Font vorhanden sind und angenehm ausschauen. Formatierung ist optional, besitzt keine inhaltliche Bedeutung und sollte aus Gründen der Barrierefreiheit bijektiv sein.</small>
+
+<h3 id="Dokumentation">Dokumentation erstellen</h3>
+
+<p>Innerhalb von <code>(*</code> und <code>*)</code> stehen normalerweise mehrzeilige Kommentare. Kommentare, die mit <code>(*/</code> beginnen, sind Anweisungen an den Dokumentations-Generator. Wir geben der Beweissammlung damit die folgenden Annotationen.
+
+<pre class="cbox">
+(*/title Meine Beweissammlung *)
+(*/chapter Einige einfache Beweise *)
+(*/section Beweisen in der Aussagenlogik *)
+
+1. 1 ⊢ A ∧ B, hypo.
+2. 1 ⊢ A, conj_eliml 1.
+Mein_Theorem. ⊢ A ∧ B → A, subj_intro 2.
+
+(*/note Mein_Theorem
+Besagt, dass man `A` aus `A ∧ B` folgern darf. *)
+</pre>
+
+<p>Im Terminal wird mit dem Programmaufruf
+
+<pre class="terminal">
+nd --doc
+</pre>
+
+<p>nun eine HTML-Dokumentation der Beweissammlung aus allen im Manifest aufgeführten Beweismodulen erstellt.
+
+<h3 id="Beweiszeile">Aufbau einer Beweiszeile</h3>
+
+<p>Ein Beweisschritt wird in einer Zeile notiert, die den folgenden Aufbau hat:
+
+<pre class="cbox" style="line-height: 1.18">
+12. 8, 6 ⊢ (u, x) ∈ R, eq_subst 10 11, P x ↔ (u, x) ∈ R.
+││  ╰──╯   │        │  ╰──────╯ │   │  ╰──────────────╯
+╰╯ Kontext ╰────────╯   Regel   ╰───╯      Hinweis
+Marke       Aussage            Prämissen
+</pre>
+
+<table class="bt">
+<tr><th>Teil<th>Erklärung
+<tr><td><b>Marke</b><td>Eine Nummer oder ein Bezeichner. Innerhalb eines Beweises
+werden üblicherweise Nummern genutzt. Ein Theorem bekommt dagegen einen
+Bezeichner.
+<tr><td><b>Kontext</b><td>Eine kommagetrennte Liste von Hypothesen, von
+denen die Aussage abhängt. Als Marke von Hypothesen sind nur Nummern gestattet.
+<tr><td><b>Aussage</b><td>Die in diesem Beweisschritt abgeleitete Aussage. Ist der
+Kontext dabei leer, handelt es sich um ein Theorem.
+<tr><td><b>Regel</b><td>Regel oder Theorem vermittels der/dem die Aussage abgeleitet wurde.
+<tr><td><b>Prämissen</b><td>Die Prämissen, auf die die Regel dabei angewendet wurde.
+<tr><td><b>Hinweis</b><td>Optionaler Hinweis, falls der automatische Abgleich
+mit den Mustern der Regel bzw. des Theorems nicht glückt.
+</table>
+
+<h3 id="KdnS">Natürliches Schließen</h3>
+
+<p>Schlussregeln im Präludium:
+
+<table class="bt">
+<tr><th>Regel<th>Bezeichner<th>Formel
+<tr><td>Hypothesenregel<td><code>hypo</code><td><code>⊤ ∧ A ⊢ A</code>
+<tr><td>Konjunktionseinführung<td><code>conj_intro</code><td><code>(H1 ⊢ A) → (H2 ⊢ B) → (H1 ∧ H2 ⊢ A ∧ B)</code>
+<tr><td>Konjunktionsbeseitigung<td><code>conj_eliml</code><td><code>(H ⊢ A ∧ B) → (H ⊢ A)</code>
+<tr><td>Konjunktionsbeseitigung<td><code>conj_elimr</code><td><code>(H ⊢ A ∧ B) → (H ⊢ B)</code>
+<tr><td>Disjunktionseinführung<td><code>disj_introl</code><td><code>(H ⊢ A) → (H ⊢ A ∨ B)</code>
+<tr><td>Disjunktionseinführung<td><code>disj_intror</code><td><code>(H ⊢ B) → (H ⊢ A ∨ B)</code>
+<tr><td>Disjunktionsbeseitigung<td><code>disj_elim</code><td><code>(H1 ⊢ A ∨ B) → (H2 ∧ A ⊢ C) → (H3 ∧ B ⊢ C) → (H1 ∧ H2 ∧ H3 ⊢ C)</code>
+<tr><td>Subjunktionseinführung<td><code>subj_intro</code><td><code>(H ∧ A ⊢ B) → (H ⊢ A → B)</code>
+<tr><td>Subjunktionsbeseitigung<td><code>subj_elim</code><td><code>(H1 ⊢ A → B) → (H2 ⊢ A) → (H1 ∧ H2 ⊢ B)</code>
+<tr><td>Negationseinführung<td><code>neg_intro</code><td><code>(H ∧ A ⊢ ⊥) → (H ⊢ ¬A)</code>
+<tr><td>Negationsbeseitigung<td><code>neg_elim</code><td><code>(H1 ⊢ ¬A) → (H2 ⊢ A) → (H1 ∧ H2 ⊢ ⊥)</code>
+<tr><td>Äquijunktionseinführung<td><code>equi_intro</code><td><code>(H1 ⊢ A → B) → (H2 ⊢ B → A) → (H1 ∧ H2 ⊢ A ↔ B)</code>
+<tr><td>Äquijunktionsbeseitigung<td><code>equi_eliml</code><td><code>(H ⊢ A ↔ B) → (H ⊢ A → B)</code>
+<tr><td>Äquijunktionsbeseitigung<td><code>equi_elimr</code><td><code>(H ⊢ A ↔ B) → (H ⊢ B → A)</code>
+<tr><td>Abschwächungsregel<td><code>wk</code><td><code>(H ⊢ B) → (H ∧ A ⊢ B)</code>
+<tr><td>Vertauschungsregel<td><code>exch</code><td><code>(H ⊢ A) → (H ⊢ A)</code>
+<tr><td>Allquantfeinf.<td><code>uq_intro</code><td><code>(nf u (H ∧ ∀x. A x)) → (H ⊢ A u) → (H ⊢ ∀x. A x)</code>
+<tr><td>Allquantfbes.<td><code>uq_elim</code><td><code>(H ⊢ ∀x. A x) → (H ⊢ A t)</code>
+<tr><td>Existenzquantfeinf.<td><code>ex_intro</code><td><code>(H ⊢ A t) → (H ⊢ ∃x. A x)</code>
+<tr><td>Existenzquantfbes.<td><code>ex_elim</code><td><code>(nf u (H1 ∧ H2 ∧ B ∧ ∃x. A x)) → (H1 ⊢ ∃x. A x) → (H2 ∧ A u ⊢ B) → (H1 ∧ H2 ⊢ B)</code>
+<tr><td>Subjunktionseinführung<td><code>subj_intro_ii</code><td><code>(H ∧ A ∧ B ⊢ C) → (H ⊢ A → B → C)</code>
+<tr><td>Subjunktionseinführung<td><code>subj_intro_iii</code><td><code>(H ∧ A ∧ B ∧ C ⊢ D) → (H ⊢ A → B → C → D)</code>
+<tr><td>Subjunktionseinführung<td><code>subj_intro_iv</code><td><code>(H ∧ A ∧ B ∧ C ∧ D ⊢ E) → (H ⊢ A → B → C → D → E)</code>
+</table>
+
+<p>Die folgende Beweisführung leitet vermittels dieser Regeln das Prinzip der Kontraposition als Theorem ab. Man sieht, wie <code>hypo</code> Annahmen einführt, die von <code>subj_intro</code> und <code>neg_intro</code> später wieder getilgt werden.
+
+<pre class="cbox">
+1. 1 ⊢ ¬B, hypo.
+2. 2 ⊢ A → B, hypo.
+3. 3 ⊢ A, hypo.
+4. 2, 3 ⊢ B, subj_elim 2 3.
+5. 1, 2, 3 ⊢ ⊥, neg_elim 1 4.
+6. 2, 1 ⊢ ¬A, neg_intro 5.
+7. 2 ⊢ ¬B → ¬A, subj_intro 6.
+contraposition. ⊢ (A → B) → ¬B → ¬A, subj_intro 7.
+</pre>
+
+<p>Genau genommen handelt es sich um ein Theoremschema, insofern durch Einsetzung in die Variablen auch Substitutionsinstanzen erhalten werden können. Die Instanziierung bzgl. <code>A := ¬C</code> sowie <code>B := ¬D</code> notiert man bspw. so:
+
+<pre class="cbox">
+1. ⊢ (¬C → ¬D) → ¬¬D → ¬¬C, contraposition.
+</pre>
+
+<p>Das Feature <i>auto rule</i>, das aus einem Theoremschema automatisch eine Schlussregel erstellt, gestattet es zudem, Instanziierung und mehrfache Substitutionsbeseitigung ergonomisch zu kombinieren:
+
+<pre class="cbox">
+1. 1 ⊢ ¬C → ¬D, hypo.
+2. 2 ⊢ ¬¬D, hypo.
+3. 1, 2 ⊢ ¬¬C, contraposition 1 2.
+</pre>
+
+<h2 id="Details">Detaillierte Beschreibung</h2>
+
+<h3 id="Syntax">Eingebaute Syntax</h3>
+
+<table class="bt">
+<tr><th>Bezeichnung<th>Funktion<th>Zusätzliche Syntax<th>Nach Formatierung
+<tr><td>Negation<td><code>neg A</code><td><code>not A</code>, <code>~A</code><td><code>¬A</code>
+<tr><td>Konjunktion<td><code>conj A B</code><td><code>A and B</code>, <code>A /\ B</code>, <code>A &amp; B</code><td><code>A ∧ B</code>
+<tr><td>Disjunktion<td><code>disj A B</code><td><code>A or B</code>, <code>A \/ B</code><td><code>A ∨ B</code>
+<tr><td>Subjunktion<td><code>subj A B</code><td><code>A -&gt; B</code><td><code>A → B</code>
+<tr><td>Äquijunktion<td><code>equi A B</code><td><code>A &lt;-&gt; B</code><td><code>A ↔ B</code>
+<tr><td>Sequenz<td><code>seq H A</code><td><code>H |- A</code><td><code>H ⊢ A</code>
+<tr><td>Allquantifizierung<td><code>uq P</code><td><code>forall x. P&nbsp;x</code><td><code>∀x. P&nbsp;x</code>
+<tr><td>Existenzquantf.<td><code>ex P</code><td><code>exists x. P&nbsp;x</code><td><code>∃x. P&nbsp;x</code>
+<tr><td>Notwendigkeit<td><code>nec A</code><td><code>box A</code><td><code>□A</code>
+<tr><td>Möglichkeit<td><code>pos A</code><td><code>dia A</code><td><code>◇A</code>
+</table>
+
+<p>Dabei handelt es sich zunächst um rohe Syntax. Zur Verwendung müssen die Funktionen entweder erst definiert oder als primitive Funktionssymbole mit zugehöriger Typsignatur deklariert werden.
+
+<h3 id="Typsystem">Typsystem</h3>
+
+<p>Der Beweisprüfer verfügt über ein <i>einfaches Typsystem</i>. Hierbei stehen lediglich die beiden Sorten <code>Ind</code>, <code>Prop</code> und der Typkonstruktor <code>X&nbsp;→&nbsp;Y</code> zur Verfügung, um die <i>einsortige Logik erster Stufe mit nichtleerem Diskursuniversum</i> beschreiben zu können.
+
+<table class="bt">
+<tr><th style="width: 14em">Typ<th>Bedeutung
+<tr><td><code>Ind</code><td>Ein <i>Individuum</i>, was je nach Axiomensystem z.&nbsp;B.
+  eine Menge, eine Klasse oder eine natürliche Zahl sein mag.
+<tr><td><code>Prop</code><td>Eine <i>Proposition</i>, das heißt, eine logische Aussage.
+<tr><td><code>Prop → Prop</code><td>Ein einstelliger Junktor oder logischer Operator.
+<tr><td><code>Prop → Prop → Prop</code><td>Ein zweistelliger Junktor.
+<tr><td><code>Ind → Ind</code><td>Eine einstellige Funktion.
+<tr><td><code>Ind → Prop</code><td>Ein einstelliges Prädikat.
+<tr><td><code>(Ind → Prop) → Prop</code><td>Ein einstelliges Prädikat zweiter Stufe.
+</table>
+
+<p>Im üblicherweise genutzten Präludium finden sich die folgenden Deklarationen:
+
+<pre class="indent">
+decl neg : Prop → Prop.
+decl conj: Prop → Prop → Prop.
+decl disj: Prop → Prop → Prop.
+decl subj: Prop → Prop → Prop.
+decl equi: Prop → Prop → Prop.
+decl seq : Prop → Prop → Prop.
+decl uq  : (Ind → Prop) → Prop.
+decl ex  : (Ind → Prop) → Prop.
+</pre>
+
+<p>Der Sinn dieses Typsystems besteht unter anderem darin, dass der Parser des Beweisprüfers nicht zwischen Termen wie <code>x + y</code> und Formeln wie <code>x&nbsp;∈&nbsp;A → P&nbsp;x</code> unterscheiden braucht. Diese Unterscheidung entsteht erst während der Typinferenz, bei der Typen dort abgeleitet werden, wo sie nicht explizit angegeben sind. Der Beweisprüfer macht extremen Gebrauch von dieser Typinferenz; an fast keiner Stelle ist die explizite Angabe von Typen nötig. Sie kann bei Wunsch jedoch durch Askription an jeder Stelle eingefügt werden. Bspw. darf man für <code>conj&nbsp;A&nbsp;B</code> auch <code>conj&nbsp;(A:&nbsp;Prop)&nbsp;B</code> oder <code>(conj&nbsp;A&nbsp;B:&nbsp;Prop)</code> schreiben. Ebenso darf man für <code>A ∧ B</code> auch <code>(A: Prop) ∧ B</code> schreiben. Eine solche würde allerdings in der Regel erst bei mehrsortiger Logik gebraucht.
+
+<h2 id="Einschraenkungen">Einschränkungen</h2>
+
+<p>Es gibt eine Reihe von Einschränkungen, die man vor einem größeren Unterfangen abklären sollte:
+
+<ol>
+<li>Es wird bislang keine mehrsortige Logik unterstützt.
+<li>Es wird bislang keine Logik höherer Stufe unterstützt.
+<li>Es werden keine leeren Diskursuniversen bzw. leere Sorten unterstützt.
+<li>Es kann nur über <code>Ind</code> quantifiziert werden, nicht über <code>Prop</code>.
+<li>Es wird kein allgemeiner Vergleich von Funktionen höherer Stufe bzgl. η-Äquivalenz unterstützt. Das heißt, die Terme <code>F&nbsp;f</code> und <code>F&nbsp;(fn&nbsp;x. f&nbsp;x)</code> werden nicht ohne Weiteres als gleich angesehen.
+<li>Das Komprehensionsschema der NBG-Mengenlehre wird nicht unterstützt. Dafür müsste Information darüber gespeichert werden, ob in definitorischen Erweiterungen alle Quantifizierungen auf Mengen relativiert sind. Es gäbe Tricks zur Umgehung, die aber ohne Automatisierungen unergonomisch sind oder mehrsortige Logik erfordern würden.
+<li>Es werden keine substrukturellen Logiken unterstützt.
+</ol>
+
+<h2 id="Literatur">Literaturverzeichnis</h2>
+
+<ul>
+<li id="ref-Suppes">[1] <i><a href="https://en.wikipedia.org/wiki/Suppes%E2%80%93Lemmon_notation">Suppes–Lemmon notation</a></i>. In: <i>Wikipedia</i>.
+</ul>
+
+</body>
+</html>
