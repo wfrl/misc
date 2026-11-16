@@ -1,0 +1,30 @@
+
+# Examples of natural deduction proofs in
+# classical propositional calculus.
+
+# Ex falso quodlibet
+efq. ⊢ ⊥ → A, axiom.
+
+# Law of excluded middle
+lem. ⊢ A ∨ ¬A, axiom.
+
+1. 1 ⊢ ¬¬A, hypo.
+2. ⊢ A ∨ ¬A, lem.
+3. 3 ⊢ A, hypo.
+4. 4 ⊢ ¬A, hypo.
+5. 1, 4 ⊢ ⊥, neg_elim 1 4.
+6. 1, 4 ⊢ A, subj_elim efq 5.
+7. 1 ⊢ A, disj_elim 2 3 6.
+dne. ⊢ ¬¬A → A, subj_intro 7.
+
+1. 1 ⊢ ¬B → ¬A, hypo.
+2. 2 ⊢ A, hypo.
+3. 3 ⊢ ¬B, hypo.
+4. 1, 3 ⊢ ¬A, subj_elim 1 3.
+5. 1, 2, 3 ⊢ ⊥, neg_elim 4 2.
+6. 1, 2 ⊢ ¬¬B, neg_intro 5.
+7. ⊢ ¬¬B → B, dne.
+8. 1, 2 ⊢ B, subj_elim 7 6.
+9. 1 ⊢ A → B, subj_intro 8.
+contraposition_rev. ⊢ (¬B → ¬A) → A → B, subj_intro 9.
+

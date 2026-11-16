@@ -4,10 +4,10 @@
 (*/section Relationhood *)
 
 relation_unfold. ⊢ relation R → ∀t. t ∈ R → ∃x. ∃y. t = (x, y),
-  bij_eliml relation_equi.
+  equi_eliml relation_equi.
 
 relation_fold. ⊢ (∀t. t ∈ R → ∃x. ∃y. t = (x, y)) → relation R,
-  bij_elimr relation_equi.
+  equi_elimr relation_equi.
 
 01. 1 ⊢ relation R, hypo.
 02. 2 ⊢ t ∈ R, hypo.
@@ -30,7 +30,7 @@ relation_elim. ⊢ relation R → t ∈ R → ∃x. ∃y. t = (x, y),
 12. 1 ⊢ t ∈ R → ∃x. ∃y. t = (x, y), subj_intro 11.
 13. 1 ⊢ ∀t. t ∈ R → ∃x. ∃y. t = (x, y), uq_intro 12.
 14. ⊢ (∀t. t ∈ R → ∃x. ∃y. t = (x, y)) → relation R,
-  bij_elimr relation_equi.
+  equi_elimr relation_equi.
 15. 1 ⊢ relation R, subj_elim 14 13.
 relation_from_incl. ⊢ R ⊆ X × Y → relation R, subj_intro 15.
 
@@ -198,7 +198,7 @@ relation_incl_prod. ⊢ relation R →
 27. 22 ⊢ x ∈ dom (R ∪ Q), ex_elim 23 26.
 28. 14 ⊢ x ∈ dom (R ∪ Q), disj_elim 15 21 27.
 29. ⊢ x ∈ dom R ∪ dom Q → x ∈ dom (R ∪ Q), subj_intro 28.
-30. ⊢ x ∈ dom (R ∪ Q) ↔ x ∈ dom R ∪ dom Q, bij_intro 13 29.
+30. ⊢ x ∈ dom (R ∪ Q) ↔ x ∈ dom R ∪ dom Q, equi_intro 13 29.
 31. ⊢ ∀x. x ∈ dom (R ∪ Q) ↔ x ∈ dom R ∪ dom Q, uq_intro 30.
 dom_union. ⊢ dom (R ∪ Q) = dom R ∪ dom Q, ext 31.
 
@@ -231,7 +231,7 @@ dom_union. ⊢ dom (R ∪ Q) = dom R ∪ dom Q, ext 31.
 27. 22 ⊢ y ∈ rng (R ∪ Q), ex_elim 23 26.
 28. 14 ⊢ y ∈ rng (R ∪ Q), disj_elim 15 21 27.
 29. ⊢ y ∈ rng R ∪ rng Q → y ∈ rng (R ∪ Q), subj_intro 28.
-30. ⊢ y ∈ rng (R ∪ Q) ↔ y ∈ rng R ∪ rng Q, bij_intro 13 29.
+30. ⊢ y ∈ rng (R ∪ Q) ↔ y ∈ rng R ∪ rng Q, equi_intro 13 29.
 31. ⊢ ∀y. y ∈ rng (R ∪ Q) ↔ y ∈ rng R ∪ rng Q, uq_intro 30.
 rng_union. ⊢ rng (R ∪ Q) = rng R ∪ rng Q, ext 31.
 
@@ -319,7 +319,7 @@ inv_img_elim. ⊢ x ∈ inv_img R B → ∃y. y ∈ B ∧ (x, y) ∈ R, subj_int
 34. 16 ⊢ y ∈ img R (A ∪ B), disj_elim 17 25 33.
 35. ⊢ y ∈ img R A ∪ img R B → y ∈ img R (A ∪ B), subj_intro 34.
 
-36. ⊢ y ∈ img R (A ∪ B) ↔ y ∈ img R A ∪ img R B, bij_intro 15 35.
+36. ⊢ y ∈ img R (A ∪ B) ↔ y ∈ img R A ∪ img R B, equi_intro 15 35.
 37. ⊢ ∀y. y ∈ img R (A ∪ B) ↔ y ∈ img R A ∪ img R B, uq_intro 36.
 img_dist_union. ⊢ img R (A ∪ B) = img R A ∪ img R B, ext 37.
 
@@ -427,7 +427,7 @@ inv_img_dist_inter. ⊢ inv_img R (A ∩ B) ⊆ inv_img R A ∩ inv_img R B,
   subj_intro 34.
 
 36. ⊢ x ∈ inv_img R (A ∪ B) ↔ x ∈ inv_img R A ∪ inv_img R B,
-  bij_intro 15 35.
+  equi_intro 15 35.
 37. ⊢ ∀x. x ∈ inv_img R (A ∪ B) ↔ x ∈ inv_img R A ∪ inv_img R B,
   uq_intro 36.
 inv_img_dist_union. ⊢ inv_img R (A ∪ B) = inv_img R A ∪ inv_img R B,
@@ -487,7 +487,7 @@ inv_img_incl_in_dom. ⊢ inv_img R B ⊆ dom R, incl_intro 8.
 33. 26 ⊢ y ∈ img (R ∪ Q) A, ex_elim 27 32.
 34. 16 ⊢ y ∈ img (R ∪ Q) A, disj_elim 17 25 33.
 35. ⊢ y ∈ img R A ∪ img Q A → y ∈ img (R ∪ Q) A, subj_intro 34.
-36. ⊢ y ∈ img (R ∪ Q) A ↔ y ∈ img R A ∪ img Q A, bij_intro 15 35.
+36. ⊢ y ∈ img (R ∪ Q) A ↔ y ∈ img R A ∪ img Q A, equi_intro 15 35.
 37. ⊢ ∀y. y ∈ img (R ∪ Q) A ↔ y ∈ img R A ∪ img Q A, uq_intro 36.
 img_union. ⊢ img (R ∪ Q) A = img R A ∪ img Q A, ext 37.
 
@@ -628,7 +628,7 @@ rng_composition. ⊢ rng (S ∘ R) ⊆ rng S, incl_intro 10.
 26. 17 ⊢ z ∈ img (S ∘ R) A, ex_elim 19 25.
 27. 15 ⊢ z ∈ img (S ∘ R) A, ex_elim 16 26.
 28. ⊢ z ∈ img S (img R A) → z ∈ img (S ∘ R) A, subj_intro 27.
-29. ⊢ z ∈ img (S ∘ R) A ↔ z ∈ img S (img R A), bij_intro 14 28.
+29. ⊢ z ∈ img (S ∘ R) A ↔ z ∈ img S (img R A), equi_intro 14 28.
 30. ⊢ ∀z. z ∈ img (S ∘ R) A ↔ z ∈ img S (img R A), uq_intro 29.
 img_composition. ⊢ img (S ∘ R) A = img S (img R A), ext 30.
 
@@ -660,7 +660,7 @@ img_composition. ⊢ img (S ∘ R) A = img S (img R A), ext 30.
 26. 17 ⊢ x ∈ inv_img (S ∘ R) B, ex_elim 19 25.
 27. 15 ⊢ x ∈ inv_img (S ∘ R) B, ex_elim 16 26.
 28. ⊢ x ∈ inv_img R (inv_img S B) → x ∈ inv_img (S ∘ R) B, subj_intro 27.
-29. ⊢ x ∈ inv_img (S ∘ R) B ↔ x ∈ inv_img R (inv_img S B), bij_intro 14 28.
+29. ⊢ x ∈ inv_img (S ∘ R) B ↔ x ∈ inv_img R (inv_img S B), equi_intro 14 28.
 30. ⊢ ∀x. x ∈ inv_img (S ∘ R) B ↔ x ∈ inv_img R (inv_img S B), uq_intro 29.
 inv_img_composition. ⊢ inv_img (S ∘ R) B = inv_img R (inv_img S B), ext 30.
 
@@ -732,7 +732,7 @@ inv_elim. ⊢ (y, x) ∈ inv R → (x, y) ∈ R, subj_intro 18.
 12. 10 ⊢ y ∈ dom (inv R), dom_intro 11.
 13. 8 ⊢ y ∈ dom (inv R), ex_elim 9 12.
 14. ⊢ y ∈ rng R → y ∈ dom (inv R), subj_intro 13.
-15. ⊢ y ∈ dom (inv R) ↔ y ∈ rng R, bij_intro 7 14.
+15. ⊢ y ∈ dom (inv R) ↔ y ∈ rng R, equi_intro 7 14.
 16. ⊢ ∀y. y ∈ dom (inv R) ↔ y ∈ rng R, uq_intro 15.
 dom_inv. ⊢ dom (inv R) = rng R, ext 16.
 
@@ -750,7 +750,7 @@ dom_inv. ⊢ dom (inv R) = rng R, ext 16.
 12. 10 ⊢ x ∈ rng (inv R), rng_intro 11.
 13. 8 ⊢ x ∈ rng (inv R), ex_elim 9 12.
 14. ⊢ x ∈ dom R → x ∈ rng (inv R), subj_intro 13.
-15. ⊢ x ∈ rng (inv R) ↔ x ∈ dom R, bij_intro 7 14.
+15. ⊢ x ∈ rng (inv R) ↔ x ∈ dom R, equi_intro 7 14.
 16. ⊢ ∀x. x ∈ rng (inv R) ↔ x ∈ dom R, uq_intro 15.
 rng_inv. ⊢ rng (inv R) = dom R, ext 16.
 
@@ -815,7 +815,7 @@ sg_relation. ⊢ set a → set b → relation {(a, b)}, subj_intro_ii 10.
 19. 1, 2, 15 ⊢ (x, b) ∈ {(a, b)}, sg_intro 6 18.
 20. 1, 2, 15 ⊢ x ∈ dom {(a, b)}, dom_intro 19.
 21. 1, 2 ⊢ x ∈ {a} → x ∈ dom {(a, b)}, subj_intro 20.
-22. 1, 2 ⊢ x ∈ dom {(a, b)} ↔ x ∈ {a}, bij_intro 14 21.
+22. 1, 2 ⊢ x ∈ dom {(a, b)} ↔ x ∈ {a}, equi_intro 14 21.
 23. 1, 2 ⊢ ∀x. x ∈ dom {(a, b)} ↔ x ∈ {a}, uq_intro 22.
 24. 1, 2 ⊢ dom {(a, b)} = {a}, ext 23.
 dom_sg. ⊢ set a → set b → dom {(a, b)} = {a}, subj_intro_ii 24.
@@ -841,7 +841,7 @@ dom_sg. ⊢ set a → set b → dom {(a, b)} = {a}, subj_intro_ii 24.
 19. 1, 2, 15 ⊢ (a, y) ∈ {(a, b)}, sg_intro 6 18.
 20. 1, 2, 15 ⊢ y ∈ rng {(a, b)}, rng_intro 19.
 21. 1, 2 ⊢ y ∈ {b} → y ∈ rng {(a, b)}, subj_intro 20.
-22. 1, 2 ⊢ y ∈ rng {(a, b)} ↔ y ∈ {b}, bij_intro 14 21.
+22. 1, 2 ⊢ y ∈ rng {(a, b)} ↔ y ∈ {b}, equi_intro 14 21.
 23. 1, 2 ⊢ ∀y. y ∈ rng {(a, b)} ↔ y ∈ {b}, uq_intro 22.
 24. 1, 2 ⊢ rng {(a, b)} = {b}, ext 23.
 rng_sg. ⊢ set a → set b → rng {(a, b)} = {b}, subj_intro_ii 24.
@@ -871,7 +871,7 @@ rng_sg. ⊢ set a → set b → rng {(a, b)} = {b}, subj_intro_ii 24.
 22. 1 ⊢ a ∈ {a}, sg_intro 1 21.
 23. 1, 2, 16 ⊢ y ∈ img {(a, b)} {a}, img_intro 22 20.
 24. 1, 2 ⊢ y ∈ {b} → y ∈ img {(a, b)} {a}, subj_intro 23.
-25. 1, 2 ⊢ y ∈ img {(a, b)} {a} ↔ y ∈ {b}, bij_intro 15 24.
+25. 1, 2 ⊢ y ∈ img {(a, b)} {a} ↔ y ∈ {b}, equi_intro 15 24.
 26. 1, 2 ⊢ ∀y. y ∈ img {(a, b)} {a} ↔ y ∈ {b}, uq_intro 25.
 27. 1, 2 ⊢ img {(a, b)} {a} = {b}, ext 26.
 img_sg_sg. ⊢ set a → set b → img {(a, b)} {a} = {b}, subj_intro_ii 27.

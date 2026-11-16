@@ -3,15 +3,16 @@
 
 (*/section Axiomatic definition *)
 
-real_decl. ⊢ ℝ = _, decl.
-radd_decl. ⊢ a + b = _, decl.
-rmul_decl. ⊢ a⋅b = _, decl.
-rneg_decl. ⊢ -a = _, decl.
-rinv_decl. ⊢ /a = _, decl.
+decl ℝ: Ind.
+decl add: Ind → Ind → Ind.
+decl mul: Ind → Ind → Ind.
+decl minus: Ind → Ind.
+decl reciprocal: Ind → Ind.
+
 rsub_eq. ⊢ a - b = a + (-b), def.
 rdiv_eq. ⊢ a/b = a⋅(/b), def.
 
-le_decl. ⊢ x ≤ y ↔ _, decl.
+decl le: Ind → Ind → Prop.
 lt_equi. ⊢ a < b ↔ a ≤ b ∧ ¬a = b, def.
 
 upper_bound_equi. ⊢ upper_bound b A ↔ ∀x. x ∈ A → x ≤ b, def.

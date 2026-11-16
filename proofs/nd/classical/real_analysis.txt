@@ -4,10 +4,10 @@
 (*/section Upper bounds *)
 
 is_sup_unfold. ⊢ is_sup s A → upper_bound s A ∧
-  (∀b. b ∈ ℝ → upper_bound b A → s ≤ b), bij_eliml is_sup_equi.
+  (∀b. b ∈ ℝ → upper_bound b A → s ≤ b), equi_eliml is_sup_equi.
 
 upper_bound_fold. ⊢ (∀x. x ∈ A → x ≤ b) →
-  upper_bound b A, bij_elimr upper_bound_equi.
+  upper_bound b A, equi_elimr upper_bound_equi.
 
 01. 1 ⊢ upper_bound b A, hypo.
 02. 2 ⊢ x ∈ A, hypo.
@@ -233,7 +233,7 @@ converges_equi. ⊢ converges a L ↔ ∀ε. ε ∈ ℝ → 0 < ε →
 
 converges_fold. ⊢ (∀ε. ε ∈ ℝ → 0 < ε →
   ∃n0. n0 ∈ ℕ ∧ ∀n. n ∈ ℕ → n0 ≤ n → abs(app a n - L) < ε) →
-  converges a L, bij_elimr converges_equi.
+  converges a L, equi_elimr converges_equi.
 
 01. 1 ⊢ converges a L, hypo.
 02. 1 ⊢ ∀ε. ε ∈ ℝ → 0 < ε → ∃n0. n0 ∈ ℕ ∧

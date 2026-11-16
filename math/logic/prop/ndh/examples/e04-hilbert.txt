@@ -1,0 +1,27 @@
+
+# A Hilbert system can be set up directly as a metalogical calculus.
+# In this framework, instantiation and multiple applications of ponens
+# may be performed ergonomically in a single step.
+
+axK. A → (B → A), axiom.
+axS. (A → (B → C)) → (A → B) → (A → C), axiom.
+axC. (¬B → ¬A) → (A → B), axiom.
+
+1. A → ((A → A) → A), axK.
+2. A → (A → A), axK.
+identity. A → A, axS 1 2.
+
+
+# Alternatively, a Hilbert sytem may also be stated as a system that
+# handles sequents that have an empty antecedent.
+
+mp. (⊢ A → B) → (⊢ A) → (⊢ B), rule.
+axK. ⊢ A → (B → A), axiom.
+axS. ⊢ (A → (B → C)) → (A → B) → (A → C), axiom.
+axC. ⊢ (¬B → ¬A) → (A → B), axiom.
+
+1. ⊢ A → ((A → A) → A), axK.
+2. ⊢ A → (A → A), axK.
+3. ⊢ (A → ((A → A) → A)) → (A → (A → A)) → (A → A), axS.
+4. ⊢ (A → (A → A)) → (A → A), mp 3 1.
+identity. ⊢ A → A, mp 4 2.

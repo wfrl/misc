@@ -6,7 +6,9 @@
 
 (*/section Definitions *)
 
-element_decl. ⊢ x ∈ A ↔ _, decl.
+decl element: Ind → Ind → Prop.
+decl comp: (Ind → Prop) → Ind.
+
 incl_equi. ⊢ A ⊆ B ↔ ∀x. x ∈ A → x ∈ B, def.
 set_equi. ⊢ set x ↔ ∃C. x ∈ C, def.
 empty_set_eq. ⊢ ∅ = {x | ⊥}, def.

@@ -14,10 +14,10 @@ indicator_eq. ⊢ χ A X =
   {t | ∃x. x ∈ A ∧ t = (x, {∅})}, def.
 
 num_eq_intro. ⊢ (∃f. bij f X Y) → num_eq X Y,
-  bij_elimr num_eq_equi.
+  equi_elimr num_eq_equi.
 
 num_le_fold. ⊢ (∃f. inj f X Y) → num_le X Y,
-  bij_elimr num_le_equi.
+  equi_elimr num_le_equi.
 
 01. 1 ⊢ inj f X Y, hypo.
 02. 1 ⊢ ∃f. inj f X Y, ex_intro 1.
@@ -25,7 +25,7 @@ num_le_fold. ⊢ (∃f. inj f X Y) → num_le X Y,
 num_le_intro. ⊢ inj f X Y → num_le X Y, subj_intro 3.
 
 num_le_unfold. ⊢ num_le X Y → ∃f. inj f X Y,
-  bij_eliml num_le_equi.
+  equi_eliml num_le_equi.
 
 01. 1 ⊢ num_le X Y, hypo.
 02. 2 ⊢ ¬∃f. sur f X Y, hypo.
@@ -200,7 +200,7 @@ let φ = {t | ∃A. A ∈ power X ∧ t = (A, χ A X)}.
 28. 11, 25 ⊢ x ∈ X, incl_elim 18 25.
 29. 1, 10, 11, 12, 25 ⊢ x ∈ A, from_indicator_app_is_one 17 28 27.
 30. 1, 10, 11, 12 ⊢ x ∈ B → x ∈ A, subj_intro 29.
-31. 1, 10, 11, 12 ⊢ x ∈ A ↔ x ∈ B, bij_intro 24 30.
+31. 1, 10, 11, 12 ⊢ x ∈ A ↔ x ∈ B, equi_intro 24 30.
 32. 1, 10, 11, 12 ⊢ ∀x. x ∈ A ↔ x ∈ B, uq_intro 31.
 33. 1, 10, 11, 12 ⊢ A = B, ext 32.
 34. 1 ⊢ A ∈ power X → B ∈ power X → app φ A = app φ B → A = B,
@@ -331,7 +331,7 @@ let D = {x | x ∈ X ∧ ¬x ∈ app f x}.
 46. 35 ⊢ set x, set_intro 36.
 47. 35, 44 ⊢ x ∈ D, comp_intro 46 45.
 48. 35 ⊢ ¬x ∈ app f x → x ∈ D, subj_intro 47.
-49. 35 ⊢ x ∈ D ↔ ¬x ∈ app f x, bij_intro 43 48.
+49. 35 ⊢ x ∈ D ↔ ¬x ∈ app f x, equi_intro 43 48.
 50. 35 ⊢ x ∈ app f x ↔ ¬x ∈ app f x, equi_trans 39 49.
 51. 35 ⊢ ⊥, diag_contra 50.
 52. 25, 27 ⊢ ⊥, ex_elim 34 51.

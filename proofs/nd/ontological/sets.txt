@@ -2,7 +2,7 @@
 (*/chapter Set theory lemmata *)
 
 sep_elim. ⊢ u ∈ {x | x ∈ A ∧ Q x} → u ∈ A ∧ Q u,
-  bij_eliml separation.
+  equi_eliml separation.
 
 01. 1 ⊢ u ∈ A, hypo.
 02. 2 ⊢ Q u, hypo.
@@ -43,6 +43,6 @@ empty_contra. ⊢ x ∈ ∅ → ⊥, subj_intro 4.
 08. ⊢ ¬(x ∈ ∅), neg_intro 7.
 09. 5 ⊢ x ∈ compl ∅, compl_intro 5 8.
 10. ⊢ x ∈ Univ → x ∈ compl ∅, subj_intro 9.
-11. ⊢ x ∈ compl ∅ ↔ x ∈ Univ, bij_intro 4 10.
+11. ⊢ x ∈ compl ∅ ↔ x ∈ Univ, equi_intro 4 10.
 12. ⊢ ∀x. x ∈ compl ∅ ↔ x ∈ Univ, uq_intro 11.
 compl_empty_set. ⊢ compl ∅ = Univ, extensionality 12.

@@ -17,7 +17,7 @@ is_infimum_equi. ⊢ is_infimum R M y A ↔
 is_supremum_unfold. ⊢ is_supremum R M y A →
   (∀x. x ∈ A → (x, y) ∈ R) ∧
   (∀b. b ∈ M → (∀x. x ∈ A → (x, b) ∈ R) → (y, b) ∈ R),
-  bij_eliml is_supremum_equi.
+  equi_eliml is_supremum_equi.
 
 01. 1 ⊢ ∀x. x ∈ A → (x, y) ∈ R, hypo.
 02. 2 ⊢ ∀b. b ∈ M → (∀x. x ∈ A → (x, b) ∈ R) → (y, b) ∈ R, hypo.

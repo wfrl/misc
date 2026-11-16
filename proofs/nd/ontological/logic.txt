@@ -4,11 +4,11 @@
 (*/section Propositional logic *)
 
 01. 1 ⊢ A ↔ B, hypo.
-02. 1 ⊢ A → B, bij_eliml 1.
+02. 1 ⊢ A → B, equi_eliml 1.
 lsubj_elim. ⊢ (A ↔ B) → A → B, subj_intro 2.
 
 01. 1 ⊢ A ↔ B, hypo.
-02. 1 ⊢ B → A, bij_elimr 1.
+02. 1 ⊢ B → A, equi_elimr 1.
 rsubj_elim. ⊢ (A ↔ B) → B → A, subj_intro 2.
 
 01. 1 ⊢ A, hypo.
@@ -39,7 +39,7 @@ contraposition. ⊢ (A → B) → ¬B → ¬A, subj_intro 7.
 11. 1, 8, 9 ⊢ ⊥, neg_elim 8 10.
 12. 1, 8 ⊢ ¬A, neg_intro 11.
 13. 1 ⊢ ¬B → ¬A, subj_intro 12.
-14. 1 ⊢ ¬A ↔ ¬B, bij_intro 7 13.
+14. 1 ⊢ ¬A ↔ ¬B, equi_intro 7 13.
 equi_cong_neg. ⊢ (A ↔ B) → (¬A ↔ ¬B),
   subj_intro 14.
 
@@ -108,8 +108,8 @@ eq_subst_rev. ⊢ y = x → Q x → Q y, subj_intro 3.
 
 (*/subsection General lemmata *)
 
-pos_unfold. ⊢ ◇A → ¬□¬A, bij_eliml pos_equi.
-pos_fold. ⊢ ¬□¬A → ◇A, bij_elimr pos_equi.
+pos_unfold. ⊢ ◇A → ¬□¬A, equi_eliml pos_equi.
+pos_fold. ⊢ ¬□¬A → ◇A, equi_elimr pos_equi.
 
 01. 1 ⊢ ¬◇A, hypo.
 02. 2 ⊢ ¬□¬A, hypo.
