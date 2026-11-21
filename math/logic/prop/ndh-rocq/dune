@@ -1,0 +1,15 @@
+(rule
+ (targets kernel.ml kernel.mli)
+ (deps kernel.v)
+ (action (run coqc %{deps})))
+
+(executable
+ (name main)
+ (modules kernel main)
+ (ocamlopt_flags (:standard -O2)))
+
+(rule
+ (mode (promote (until-clean)))
+ (targets nd)
+ (deps main.exe)
+ (action (copy %{deps} %{targets})))

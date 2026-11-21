@@ -1,0 +1,66 @@
+
+1. 1 ⊢ A ∧ B, hypo.
+2. 1 ⊢ A, conj_eliml 1.
+3. 1 ⊢ B, conj_elimr 1.
+4. 1 ⊢ B ∧ A, conj_intro 3 2.
+5. ⊢ A ∧ B → B ∧ A, subj_intro 4.
+
+1. 1 ⊢ A ∨ B, hypo.
+2. 2 ⊢ A, hypo.
+3. 3 ⊢ B, hypo.
+4. 3 ⊢ B ∨ A, disj_introl 3.
+5. 2 ⊢ B ∨ A, disj_intror 2.
+6. 1 ⊢ B ∨ A, disj_elim 1 5 4.
+7. ⊢ A ∨ B → B ∨ A, subj_intro 6.
+
+1. 1 ⊢ A, hypo.
+2. 2 ⊢ B, hypo.
+3. 1, 2 ⊢ A, wk 1.
+4. 1 ⊢ B → A, subj_intro 3.
+5. ⊢ A → (B → A), subj_intro 4.
+
+1. 1 ⊢ ¬B, hypo.
+2. 2 ⊢ A → B, hypo.
+3. 3 ⊢ A, hypo.
+4. 2, 3 ⊢ B, subj_elim 2 3.
+5. 1, 2, 3 ⊢ ⊥, neg_elim 1 4.
+6. 2, 1 ⊢ ¬A, neg_intro 5.
+7. 2 ⊢ ¬B → ¬A, subj_intro 6.
+contraposition. ⊢ (A → B) → ¬B → ¬A, subj_intro 7.
+
+1. 1 ⊢ A → B, hypo.
+2. ⊢ (A → B) → ¬B → ¬A, contraposition.
+3. ⊢ (¬B → ¬A) → ¬¬A → ¬¬B, contraposition.
+4. 1 ⊢ ¬B → ¬A, subj_elim 2 1.
+5. 1 ⊢ ¬¬A → ¬¬B, subj_elim 3 4.
+6. ⊢ (A → B) → ¬¬A → ¬¬B, subj_intro 5.
+
+1. 1 ⊢ (A ∨ B) ∧ ¬A, hypo.
+2. 1 ⊢ ¬A, conj_elimr 1.
+3. 1 ⊢ A ∨ B, conj_eliml 1.
+4. 4 ⊢ A, hypo.
+5. 1, 4 ⊢ ⊥, neg_elim 2 4.
+6. 1, 4 ⊢ B, efq 5.
+7. 7 ⊢ B, hypo.
+8. 1 ⊢ B, disj_elim 3 6 7.
+disjunctive_syllogism. ⊢ (A ∨ B) ∧ ¬A → B, subj_intro 8.
+
+1. 1 ⊢ ¬¬A, hypo.
+2. ⊢ A ∨ ¬A, lem.
+3. 3 ⊢ A, hypo.
+4. 4 ⊢ ¬A, hypo.
+5. 1, 4 ⊢ ⊥, neg_elim 1 4.
+6. 1, 4 ⊢ A, efq 5.
+7. 1 ⊢ A, disj_elim 2 3 6.
+dne. ⊢ ¬¬A → A, subj_intro 7.
+
+1. 1 ⊢ ¬B → ¬A, hypo.
+2. 2 ⊢ A, hypo.
+3. 3 ⊢ ¬B, hypo.
+4. 1, 3 ⊢ ¬A, subj_elim 1 3.
+5. 1, 2, 3 ⊢ ⊥, neg_elim 4 2.
+6. 1, 2 ⊢ ¬¬B, neg_intro 5.
+7. ⊢ ¬¬B → B, dne.
+8. 1, 2 ⊢ B, subj_elim 7 6.
+9. 1 ⊢ A → B, subj_intro 8.
+contraposition_rev. ⊢ (¬B → ¬A) → A → B, subj_intro 9.
